@@ -1,0 +1,3298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RS Politeknik LP3I Jakarta - Portal Layanan & Pendaftaran Pasien Cerdas</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Pro Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Open Source QRCode.js Library (High Quality & Zero-Dependency) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Tailwind Custom Medical Color Palette -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace']
+          },
+          colors: {
+            medical: {
+              teal: '#0F766E',       /* Teal Medis Utama */
+              'teal-light': '#14B8A6',
+              'teal-dark': '#115E59',
+              'teal-50': '#F0FDFA',
+              'teal-100': '#CCFBF1',
+              sapphire: '#1E3A8A',   /* Biru Safir */
+              'sapphire-50': '#EFF6FF',
+              'sapphire-100': '#DBEAFE',
+              emergency: '#DC2626',  /* Merah IGD */
+              'emergency-50': '#FEF2F2',
+              bg: '#F8FAFC',
+              border: '#E2E8F0',
+              muted: '#64748B'
+            }
+          },
+          boxShadow: {
+            'subtle': '0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02)',
+            'float': '0 10px 30px -5px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.02)',
+            'card-hover': '0 20px 35px -10px rgba(15, 118, 110, 0.08), 0 6px 16px -4px rgba(15, 23, 42, 0.03)',
+            'teal-glow': '0 4px 20px -2px rgba(15, 118, 110, 0.25)',
+            'thermal': '0 4px 15px rgba(0, 0, 0, 0.08)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Styling scrollbar halus */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #F8FAFC; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+    /* CSS Print Struk Thermal (80mm) dan E-Tiket */
+    @media print {
+      body * { visibility: hidden !important; }
+      
+      /* Print Area E-Tiket Online */
+      #printArea, #printArea * { 
+        visibility: visible !important; 
+      }
+      #printArea { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 100%; 
+        margin: 0; 
+        padding: 20px; 
+      }
+
+      /* Print Area Struk Kiosk Thermal */
+      #printAreaKiosk, #printAreaKiosk * { 
+        visibility: visible !important; 
+      }
+      #printAreaKiosk { 
+        position: absolute; 
+        left: 50%; 
+        top: 0; 
+        transform: translateX(-50%); 
+        width: 320px !important; 
+        margin: 0 auto; 
+        padding: 10px; 
+        background: #fff;
+        color: #000;
+      }
+    }
+
+    /* Animasi lampu hijau pulse real-time */
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.15); }
+    }
+    .pulse-indicator { animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+    /* Struk Thermal Kiosk Style */
+    .thermal-receipt {
+      font-family: 'Space Mono', 'Courier New', Courier, monospace;
+      background: #ffffff;
+      border: 1px dashed #cbd5e1;
+      position: relative;
+    }
+    .thermal-receipt::after {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      right: 0;
+      height: 10px;
+      background: radial-gradient(circle, transparent, transparent 50%, #ffffff 50%, #ffffff 100%);
+      background-size: 14px 14px;
+    }
+  </style>
+</head>
+<body class="bg-medical-bg text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-medical-teal selection:text-white pb-20 md:pb-8">
+
+  <!-- ========================================================================= -->
+  <!-- 1. TOP UTILITY BAR (EMERGENCY HOTLINE & STATUS REAL-TIME)                 -->
+  <!-- ========================================================================= -->
+  <div class="bg-slate-50/90 border-b border-slate-200/60 text-xs py-2 px-4 sm:px-6 lg:px-8 text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
+      <!-- Sisi Kiri: Identitas RS & Lokasi -->
+      <div class="flex items-center gap-2 sm:gap-3 text-xs">
+        <span class="inline-flex items-center gap-1.5 font-bold text-slate-800">
+          <i class="fa-solid fa-hospital text-medical-teal text-[11px]"></i>
+          <span>RS Politeknik LP3I Jakarta</span>
+        </span>
+        <span class="text-slate-300">|</span>
+        <span class="hidden sm:inline text-slate-500 text-[11px]">Jl. Kramat Raya No. 7-9, Senen, Jakarta Pusat</span>
+      </div>
+
+      <!-- Sisi Kanan: Hotline IGD, Uji Audio & Status Server -->
+      <div class="flex items-center gap-3 ml-auto text-xs">
+        <!-- Hotline Darurat Langsung -->
+        <button onclick="openEmergencyModal()" class="text-rose-600 hover:text-rose-700 font-extrabold flex items-center gap-1.5 transition text-[11px] sm:text-xs">
+          <span class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+          <i class="fa-solid fa-phone-volume text-[10px]"></i>
+          <span>Hotline IGD: (021) 3190-5454</span>
+        </button>
+
+        <span class="hidden md:inline text-slate-200">|</span>
+
+        <!-- Quick Audio Puskesmas Test Button -->
+        <button onclick="testChimeAndVoice()" class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-slate-600 bg-white hover:bg-teal-50 hover:text-medical-teal border border-slate-200 shadow-subtle transition">
+          <i class="fa-solid fa-volume-high text-[10px] text-medical-teal"></i>
+          <span>Uji Suara Antrean</span>
+        </button>
+
+        <span class="hidden lg:inline text-slate-200">|</span>
+
+        <div class="hidden lg:flex items-center gap-1.5 text-emerald-600 font-semibold text-[11px]">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-indicator"></span>
+          <span>Server Online</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. HEADER & NAVIGATION BAR (LEGA, RAPI & BERSTANDAR INTERNASIONAL)        -->
+  <!-- ========================================================================= -->
+  <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 shadow-subtle">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-20 gap-4">
+        
+        <!-- Sisi Kiri: Brand & Logo RS Politeknik LP3I (Clean & Compact) -->
+        <div class="flex items-center flex-shrink-0">
+          <a href="javascript:void(0)" onclick="switchTab('beranda')" class="flex items-center gap-3 group">
+            <div class="w-10 h-10 rounded-xl bg-slate-50 p-1 flex items-center justify-center border border-slate-200/90 shadow-subtle transition group-hover:scale-105 group-hover:border-teal-400 flex-shrink-0">
+              <img src="lp3i_logo.png" alt="Logo LP3I" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/4/4b/Logo_LP3I.png';">
+            </div>
+            <div class="flex flex-col">
+              <div class="flex items-center gap-1.5 leading-none">
+                <span class="font-black text-slate-900 text-base sm:text-lg tracking-tight">RS POLITEKNIK LP3I</span>
+                <span class="bg-teal-50 text-medical-teal text-[9px] font-black px-1.5 py-0.5 rounded border border-teal-200/60 uppercase">Jakarta</span>
+              </div>
+              <p class="text-[10px] text-slate-400 font-medium mt-1 leading-none">Portal Pasien & Pendaftaran Cerdas</p>
+            </div>
+          </a>
+        </div>
+
+        <!-- Sisi Tengah: Menu Navigasi Pasien (Dropdown Hover Popups yang Rapi & Elegan) -->
+        <nav class="hidden lg:flex items-center gap-1 xl:gap-2 text-xs font-bold text-slate-700">
+          
+          <!-- 1. Beranda -->
+          <button onclick="switchTab('beranda')" id="nav-btn-beranda" class="nav-link px-3.5 py-2 rounded-xl text-medical-teal bg-teal-50/80 hover:bg-teal-50 flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-house text-xs"></i>
+            <span>Beranda</span>
+          </button>
+          
+          <!-- 2. DROPDOWN HOVER: LAYANAN & PENDAFTARAN PASIEN -->
+          <div class="relative group">
+            <button type="button" class="px-3.5 py-2 rounded-xl text-slate-700 hover:text-medical-teal hover:bg-slate-100 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-hospital-user text-medical-teal text-xs"></i>
+              <span>Layanan Pasien</span>
+              <i class="fa-solid fa-chevron-down text-[9px] text-slate-400 group-hover:rotate-180 transition-transform duration-200"></i>
+            </button>
+
+            <!-- Popup Flyout Card -->
+            <div class="absolute left-0 top-full pt-2 w-80 invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
+              <div class="bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-2.5 space-y-1">
+                <div class="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1 flex items-center justify-between">
+                  <span>Fitur Pasien Mandiri</span>
+                  <span class="text-[9px] font-mono text-medical-teal font-bold bg-teal-50 px-1.5 py-0.5 rounded">Online / Kiosk</span>
+                </div>
+                
+                <!-- Item 1: Daftar Rawat Jalan -->
+                <a href="javascript:void(0)" onclick="startRegistrationFlow()" class="flex items-start gap-3 p-2.5 rounded-xl hover:bg-teal-50/70 transition group/item">
+                  <div class="w-9 h-9 rounded-xl bg-teal-50 text-medical-teal flex items-center justify-center text-sm group-hover/item:bg-medical-teal group-hover/item:text-white transition flex-shrink-0">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-xs text-slate-800 group-hover/item:text-medical-teal transition">Daftar Rawat Jalan Online</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5 leading-snug">Pilih dokter, kuota live & E-Tiket ber-QR</div>
+                  </div>
+                </a>
+
+                <!-- Item 2: Mesin Kiosk Lobi -->
+                <a href="javascript:void(0)" onclick="switchTab('kiosk')" class="flex items-start gap-3 p-2.5 rounded-xl hover:bg-amber-50/70 transition group/item">
+                  <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm group-hover/item:bg-amber-500 group-hover/item:text-white transition flex-shrink-0">
+                    <i class="fa-solid fa-print"></i>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-xs text-slate-800 group-hover/item:text-amber-700 transition">Mesin Kiosk Lobi (1-Klik)</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5 leading-snug">Cetak nomor antrean fisik mandiri lobi</div>
+                  </div>
+                </a>
+
+                <!-- Item 3: Layar TV Antrean -->
+                <a href="javascript:void(0)" onclick="switchTab('display')" class="flex items-start gap-3 p-2.5 rounded-xl hover:bg-indigo-50/70 transition group/item">
+                  <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm group-hover/item:bg-indigo-600 group-hover/item:text-white transition flex-shrink-0">
+                    <i class="fa-solid fa-tv"></i>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-xs text-slate-800 group-hover/item:text-indigo-700 transition">Layar TV Antrean Pasien</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5 leading-snug">Panggilan suara otomatis & nomor live</div>
+                  </div>
+                </a>
+
+                <!-- Item 4: Syarat & Ketentuan -->
+                <a href="javascript:void(0)" onclick="openTermsModal()" class="flex items-start gap-3 p-2 rounded-xl hover:bg-slate-100 transition group/item border-t border-slate-100 pt-2 mt-1">
+                  <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs group-hover/item:bg-slate-800 group-hover/item:text-white transition flex-shrink-0">
+                    <i class="fa-solid fa-file-contract"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold text-xs text-slate-800 group-hover/item:text-slate-900 transition">Syarat & Ketentuan Berobat</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5 leading-snug">Panduan pasien BPJS & Pasien Umum</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. DROPDOWN HOVER: POLIKLINIK & DOKTER SPESIALIS -->
+          <div class="relative group">
+            <button type="button" class="px-3.5 py-2 rounded-xl text-slate-700 hover:text-medical-teal hover:bg-slate-100 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-user-doctor text-indigo-600 text-xs"></i>
+              <span>Dokter Spesialis</span>
+              <i class="fa-solid fa-chevron-down text-[9px] text-slate-400 group-hover:rotate-180 transition-transform duration-200"></i>
+            </button>
+
+            <!-- Popup Flyout Card Poliklinik -->
+            <div class="absolute left-0 top-full pt-2 w-80 invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
+              <div class="bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-2.5 space-y-1">
+                <div class="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1 flex items-center justify-between">
+                  <span>Jadwal Dokter & Poliklinik</span>
+                  <span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">Praktik Aktif</span>
+                </div>
+
+                <a href="javascript:void(0)" onclick="bookingDenganDokter(1, 1)" class="flex items-center justify-between p-2 rounded-xl hover:bg-teal-50/70 transition group/item">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-teal-50 text-medical-teal flex items-center justify-center text-xs group-hover/item:bg-medical-teal group-hover/item:text-white transition">
+                      <i class="fa-solid fa-stethoscope"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-xs text-slate-800 group-hover/item:text-medical-teal transition">Poli Umum & Primer</div>
+                      <div class="text-[10px] text-slate-400">dr. Nasril Al-Farabi, M.Kes</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-medical-teal font-extrabold">&rarr;</span>
+                </a>
+
+                <a href="javascript:void(0)" onclick="bookingDenganDokter(2, 2)" class="flex items-center justify-between p-2 rounded-xl hover:bg-teal-50/70 transition group/item">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-teal-50 text-medical-teal flex items-center justify-center text-xs group-hover/item:bg-medical-teal group-hover/item:text-white transition">
+                      <i class="fa-solid fa-tooth"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-xs text-slate-800 group-hover/item:text-medical-teal transition">Poli Konservasi Gigi</div>
+                      <div class="text-[10px] text-slate-400">drg. Amanda Putri, Sp.KG</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-medical-teal font-extrabold">&rarr;</span>
+                </a>
+
+                <a href="javascript:void(0)" onclick="bookingDenganDokter(3, 3)" class="flex items-center justify-between p-2 rounded-xl hover:bg-teal-50/70 transition group/item">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-teal-50 text-medical-teal flex items-center justify-center text-xs group-hover/item:bg-medical-teal group-hover/item:text-white transition">
+                      <i class="fa-solid fa-baby"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-xs text-slate-800 group-hover/item:text-medical-teal transition">Poli Spesialis Anak</div>
+                      <div class="text-[10px] text-slate-400">dr. Budi Santoso, Sp.A</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-medical-teal font-extrabold">&rarr;</span>
+                </a>
+
+                <a href="javascript:void(0)" onclick="bookingDenganDokter(4, 4)" class="flex items-center justify-between p-2 rounded-xl hover:bg-teal-50/70 transition group/item">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-teal-50 text-medical-teal flex items-center justify-center text-xs group-hover/item:bg-medical-teal group-hover/item:text-white transition">
+                      <i class="fa-solid fa-heart-pulse"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-xs text-slate-800 group-hover/item:text-medical-teal transition">Poli Penyakit Dalam</div>
+                      <div class="text-[10px] text-slate-400">dr. Citra Lestari, Sp.PD</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-medical-teal font-extrabold">&rarr;</span>
+                </a>
+
+                <a href="javascript:void(0)" onclick="bookingDenganDokter(5, 5)" class="flex items-center justify-between p-2 rounded-xl hover:bg-teal-50/70 transition group/item">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-teal-50 text-medical-teal flex items-center justify-center text-xs group-hover/item:bg-medical-teal group-hover/item:text-white transition">
+                      <i class="fa-solid fa-eye"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-xs text-slate-800 group-hover/item:text-medical-teal transition">Poli Spesialis Mata</div>
+                      <div class="text-[10px] text-slate-400">dr. Eko Prasetyo, Sp.M</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-medical-teal font-extrabold">&rarr;</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. AKREDITASI RESMI LINK -->
+          <a href="javascript:void(0)" onclick="scrollToSection('section-akreditasi')" class="px-3.5 py-2 rounded-xl text-slate-700 hover:text-medical-teal hover:bg-slate-100 flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-award text-amber-500 text-xs"></i>
+            <span>Akreditasi KARS</span>
+          </a>
+
+        </nav>
+
+        <!-- Sisi Kanan: Action Buttons (Tombol IGD, Portal Staf, & User Profile) -->
+        <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          
+          <!-- Tombol Emergency Hotline Cepat -->
+          <button onclick="openEmergencyModal()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition shadow-subtle group">
+            <span class="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
+            <i class="fa-solid fa-truck-medical text-rose-600"></i>
+            <span class="hidden sm:inline">IGD 24 Jam</span>
+            <span class="sm:hidden font-bold">IGD</span>
+          </button>
+
+          <!-- Divider Halus -->
+          <div class="hidden sm:block h-6 w-px bg-slate-200"></div>
+
+          <!-- Portal Staf RS (Admisi & Dokter) -->
+          <div class="relative hidden sm:block">
+            <button onclick="toggleStaffDropdown()" id="staff-menu-btn" class="px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-user-gear text-slate-400"></i>
+              <span>Portal Staf</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-0.5"></i>
+            </button>
+
+            <div id="staff-dropdown-menu" class="hidden absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2 z-50">
+              <div class="px-4 py-2 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                Layanan Manajemen Internal
+              </div>
+              <a href="javascript:void(0)" onclick="switchTab('admisi'); toggleStaffDropdown();" class="flex items-center px-4 py-2.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-medical-teal font-medium transition">
+                <i class="fa-solid fa-id-card-clip w-5 text-emerald-600"></i>
+                <span>Meja Admisi & Scan QR</span>
+              </a>
+              <a href="javascript:void(0)" onclick="switchTab('dokter'); toggleStaffDropdown();" class="flex items-center px-4 py-2.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-medical-teal font-medium transition">
+                <i class="fa-solid fa-user-doctor w-5 text-indigo-600"></i>
+                <span>Ruang Periksa Dokter</span>
+              </a>
+              <a href="javascript:void(0)" onclick="switchTab('display'); toggleStaffDropdown();" class="flex items-center px-4 py-2.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-medical-teal font-medium transition">
+                <i class="fa-solid fa-tv w-5 text-amber-600"></i>
+                <span>Layar TV Antrean Poliklinik</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Dropdown Profil Hamzah Fadhila (Clean & Elegant) -->
+          <div class="relative">
+            <button onclick="toggleUserDropdown()" id="user-menu-btn" class="flex items-center gap-2.5 p-1.5 pl-3 pr-2.5 rounded-full border border-slate-200/90 bg-white hover:bg-slate-50 hover:border-teal-300 transition shadow-subtle focus:outline-none focus:ring-2 focus:ring-teal-500/20 group">
+              <div class="text-left hidden md:block">
+                <div class="text-xs font-bold text-slate-800 group-hover:text-medical-teal transition leading-tight flex items-center gap-1">
+                  <span>Hamzah Fadhila</span>
+                  <i class="fa-solid fa-circle-check text-medical-teal text-[10px]"></i>
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono leading-none mt-1">240444020019</div>
+              </div>
+              
+              <div class="relative flex-shrink-0">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-medical-teal to-teal-500 text-white font-extrabold text-[11px] flex items-center justify-center shadow-sm">
+                  HF
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+              </div>
+              
+              <i class="fa-solid fa-chevron-down text-slate-400 text-[10px] transition group-hover:text-slate-600"></i>
+            </button>
+
+            <div id="user-dropdown-menu" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-3 z-50">
+              <div class="px-5 py-3 border-b border-slate-100">
+                <div class="flex items-center space-x-3 mb-2">
+                  <div class="w-10 h-10 rounded-full bg-teal-100 text-medical-teal font-extrabold flex items-center justify-center text-sm">
+                    HF
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-900">Hamzah Fadhila</h4>
+                    <p class="text-[11px] text-slate-500 font-mono">NIM: 240444020019</p>
+                  </div>
+                </div>
+                <div class="bg-teal-50/70 rounded-xl p-2.5 text-[11px] text-medical-teal font-semibold border border-teal-100">
+                  <div class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>D3 Manajemen Informatika</span>
+                  </div>
+                  <div class="text-slate-500 text-[10px] font-normal mt-0.5">Politeknik LP3I Jakarta</div>
+                </div>
+              </div>
+
+              <div class="py-2 text-xs">
+                <a href="javascript:void(0)" onclick="switchTab('beranda'); toggleUserDropdown();" class="flex items-center px-5 py-2 text-slate-700 hover:bg-slate-50 hover:text-medical-teal font-medium transition">
+                  <i class="fa-solid fa-house w-5 text-slate-400"></i>
+                  <span>Halaman Utama (Beranda)</span>
+                </a>
+                <a href="javascript:void(0)" onclick="startRegistrationFlow(); toggleUserDropdown();" class="flex items-center px-5 py-2 text-slate-700 hover:bg-slate-50 hover:text-medical-teal font-medium transition">
+                  <i class="fa-solid fa-calendar-plus w-5 text-medical-teal"></i>
+                  <span>Pendaftaran Rawat Jalan</span>
+                </a>
+                <a href="javascript:void(0)" onclick="switchTab('kiosk'); toggleUserDropdown();" class="flex items-center px-5 py-2 text-slate-700 hover:bg-slate-50 hover:text-medical-teal font-medium transition">
+                  <i class="fa-solid fa-print w-5 text-amber-500"></i>
+                  <span>Mesin Antrean Kiosk Lobi</span>
+                </a>
+                <a href="javascript:void(0)" onclick="testChimeAndVoice(); toggleUserDropdown();" class="flex items-center px-5 py-2 text-slate-700 hover:bg-slate-50 hover:text-medical-teal font-medium transition">
+                  <i class="fa-solid fa-volume-high w-5 text-emerald-600"></i>
+                  <span>Uji Suara Antrean Puskesmas</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN CONTAINER WRAPPER                                                    -->
+  <!-- ========================================================================= -->
+  <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
+
+    <!-- ======================================================================= -->
+    <!-- 1. HALAMAN BERANDA UTAMA (PORTAL AWAL RUMAH SAKIT)                     -->
+    <!-- ======================================================================= -->
+    <div id="tab-beranda" class="tab-content block space-y-8">
+
+      <!-- Hero Section Beranda Utama -->
+      <section class="relative rounded-3xl bg-white border border-slate-200/80 p-6 sm:p-10 lg:p-12 shadow-float overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-teal-50/50 via-slate-50/30 to-white pointer-events-none"></div>
+        <div class="absolute top-0 right-0 w-80 h-80 rounded-full bg-teal-100/30 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          <!-- Sisi Kiri: Teks Sambutan & Headline -->
+          <div class="lg:col-span-7 space-y-4">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-medical-teal border border-teal-200/70">
+              <span class="w-2 h-2 rounded-full bg-medical-teal pulse-indicator"></span>
+              <span>Pusat Pelayanan Medis Terpadu & Terpercaya</span>
+            </div>
+
+            <h1 class="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 tracking-tight leading-[1.18]">
+              Kesehatan Terbaik Anda <br class="hidden sm:inline">
+              <span class="text-medical-teal">Prioritas Utama Kami</span>
+            </h1>
+
+            <p class="text-slate-500 text-sm sm:text-base leading-relaxed max-w-2xl font-normal">
+              Selamat datang di Rumah Sakit Politeknik LP3I Jakarta. Nikmati kemudahan akses reservasi poliklinik online, mesin antrean fisik mandiri 1-klik di lobi, pemantauan kuota dokter real-time, serta penanganan gawat darurat (IGD) 24 jam dengan standar Akreditasi Paripurna KARS.
+            </p>
+
+            <!-- 2 Tombol Aksi Utama -->
+            <div class="pt-2 flex flex-wrap gap-3">
+              <button onclick="startRegistrationFlow()" class="px-6 py-3.5 rounded-xl font-extrabold text-white bg-medical-teal hover:bg-medical-teal-dark active:scale-[0.99] transition shadow-teal-glow flex items-center space-x-2 text-sm">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span>Daftar Rawat Jalan Online</span>
+              </button>
+              <button onclick="switchTab('kiosk')" class="px-5 py-3.5 rounded-xl font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition shadow-subtle flex items-center space-x-2 text-sm">
+                <i class="fa-solid fa-print text-amber-600"></i>
+                <span>Mesin Antrean Kiosk (1-Klik Lobi)</span>
+              </button>
+            </div>
+
+            <!-- 4 Badges Medis -->
+            <div class="pt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div class="flex items-center space-x-2 text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-subtle">
+                <i class="fa-solid fa-award text-medical-teal"></i>
+                <span class="font-medium">Akreditasi KARS</span>
+              </div>
+              <div class="flex items-center space-x-2 text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-subtle">
+                <i class="fa-solid fa-shield-heart text-teal-600"></i>
+                <span class="font-medium">SATUSEHAT Valid</span>
+              </div>
+              <div class="flex items-center space-x-2 text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-subtle">
+                <i class="fa-solid fa-qrcode text-medical-teal"></i>
+                <span class="font-medium">QR Struk Cepat</span>
+              </div>
+              <div class="flex items-center space-x-2 text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-subtle">
+                <i class="fa-solid fa-volume-high text-emerald-600"></i>
+                <span class="font-medium">Panggilan Suara</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sisi Kanan: Foto Banner Medis Komersial -->
+          <div class="lg:col-span-5">
+            <div class="relative rounded-2xl overflow-hidden shadow-float border border-slate-200/90 group bg-slate-100">
+              <img src="hospital_hero_banner.jpg" alt="RS Politeknik LP3I Jakarta Banner" class="w-full h-64 sm:h-72 lg:h-80 object-cover object-center group-hover:scale-105 transition-all duration-500">
+              
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end p-5 text-white">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/30 text-teal-200 border border-teal-400/30 backdrop-blur-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span> Pelayanan Prima KARS
+                  </span>
+                  <span class="text-[10px] text-slate-300 font-mono">SIM-RS 2026</span>
+                </div>
+                <div class="font-extrabold text-sm sm:text-base leading-snug">Layanan Kesehatan Cerdas & Terpadu</div>
+                <div class="text-[11px] text-slate-300 mt-0.5">RS Politeknik LP3I Jakarta siap memberikan pelayanan kesehatan terbaik untuk Anda dan keluarga.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 4 KARTU AKSI CEPAT PASIEN -->
+      <section class="space-y-4">
+        <div>
+          <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Pusat Layanan Cepat Pasien</h2>
+          <p class="text-xs text-slate-500">Akses langsung ke modul pelayanan terpadu RS Politeknik LP3I Jakarta</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <!-- Aksi 1: Pendaftaran Online -->
+          <div onclick="startRegistrationFlow()" class="group p-5 bg-white rounded-2xl border border-slate-200/80 hover:border-teal-500 hover:shadow-card-hover transition cursor-pointer space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-teal-50 text-medical-teal flex items-center justify-center text-xl group-hover:bg-medical-teal group-hover:text-white transition">
+              <i class="fa-solid fa-calendar-plus"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm group-hover:text-medical-teal transition">Daftar Rawat Jalan Online</h3>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">Pilih dokter, pantau kuota live, dan dapatkan E-Tiket antrean digital resmi ber-QR Code.</p>
+            </div>
+            <div class="text-xs font-bold text-medical-teal flex items-center gap-1 pt-1">
+              <span>Buka Formulir</span>
+              <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </div>
+          </div>
+
+          <!-- Aksi 2: Mesin Kiosk 1-Klik Lobi -->
+          <div onclick="switchTab('kiosk')" class="group p-5 bg-white rounded-2xl border border-slate-200/80 hover:border-amber-500 hover:shadow-card-hover transition cursor-pointer space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl group-hover:bg-amber-500 group-hover:text-white transition">
+              <i class="fa-solid fa-print"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm group-hover:text-amber-600 transition">Mesin Antrean Kiosk (1-Klik)</h3>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">Cetak struk antrean fisik langsung di lobi rumah sakit dengan 1-klik untuk pasien walk-in.</p>
+            </div>
+            <div class="text-xs font-bold text-amber-600 flex items-center gap-1 pt-1">
+              <span>Buka Mesin Kiosk</span>
+              <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </div>
+          </div>
+
+          <!-- Aksi 3: Gawat Darurat & IGD 24 Jam -->
+          <div onclick="openEmergencyModal()" class="group p-5 bg-white rounded-2xl border border-slate-200/80 hover:border-rose-500 hover:shadow-card-hover transition cursor-pointer space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl group-hover:bg-rose-600 group-hover:text-white transition">
+              <i class="fa-solid fa-truck-medical"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm group-hover:text-rose-600 transition">Gawat Darurat & IGD 24 Jam</h3>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">Panggilan ambulans darurat, panduan triase penanganan kritis, dan lokasi IGD Gedung A.</p>
+            </div>
+            <div class="text-xs font-bold text-rose-600 flex items-center gap-1 pt-1">
+              <span>Bantuan Darurat</span>
+              <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </div>
+          </div>
+
+          <!-- Aksi 4: Cek Status Antrean & Scan QR -->
+          <div onclick="switchTab('display')" class="group p-5 bg-white rounded-2xl border border-slate-200/80 hover:border-indigo-500 hover:shadow-card-hover transition cursor-pointer space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl group-hover:bg-indigo-600 group-hover:text-white transition">
+              <i class="fa-solid fa-tv"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition">Layar TV Antrean Pasien</h3>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">Pantau nomor antrean yang sedang dipanggil di ruang tunggu beserta panggilan suara.</p>
+            </div>
+            <div class="text-xs font-bold text-indigo-600 flex items-center gap-1 pt-1">
+              <span>Lihat Layar TV</span>
+              <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- POLIKLINIK SPESIALIS & JADWAL DOKTER -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Poliklinik Spesialis RS Politeknik LP3I</h2>
+            <p class="text-xs text-slate-500">Pilihan klinik rawat jalan dengan fasilitas medis modern dan tenaga ahli profesional</p>
+          </div>
+          <button onclick="startRegistrationFlow()" class="text-xs font-bold text-medical-teal hover:underline hidden sm:inline-block">
+            Daftar Jadwal Periksa &rarr;
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="home-poli-grid">
+          <!-- Diisi otomatis dari script data dokter -->
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- SECTION TIM DOKTER SPESIALIS (FOTO AHLI MEDIS RESMI)                   -->
+      <!-- ======================================================================= -->
+      <section id="section-dokter" class="space-y-5 pt-2">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-medical-teal border border-teal-200/70 mb-2">
+              <i class="fa-solid fa-user-doctor"></i>
+              <span>Tenaga Medis Spesialis Berpengalaman</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Dokter Spesialis & Tim Ahli Medis</h2>
+            <p class="text-xs sm:text-sm text-slate-500 max-w-2xl mt-1">
+              Didukung oleh para dokter spesialis terpercaya lulusan fakultas kedokteran terkemuka, siap memberikan pelayanan konsultasi, diagnosa akurat, dan terapi medis terbaik untuk Anda dan keluarga.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="startRegistrationFlow()" class="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-medical-teal hover:bg-medical-teal-dark active:scale-[0.99] transition shadow-teal-glow flex items-center space-x-1.5">
+              <i class="fa-solid fa-calendar-check"></i>
+              <span>Reservasi Konsultasi Online</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Grid 5 Ahli Medis RS Politeknik LP3I -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-5">
+          
+          <!-- Dokter 1: dr. Nasril Al-Farabi, M.Kes -->
+          <div class="group bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-subtle hover:shadow-card-hover hover:border-teal-400 transition-all duration-300 flex flex-col overflow-hidden">
+            <div class="relative h-56 sm:h-60 bg-gradient-to-t from-slate-900 via-slate-800 to-slate-700 overflow-hidden">
+              <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=600&q=80" 
+                   alt="dr. Nasril Al-Farabi, M.Kes" 
+                   class="w-full h-full object-cover object-top group-hover:scale-105 transition-all duration-500"
+                   onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=600&q=80';">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
+              
+              <!-- Badges status & poli -->
+              <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-slate-800 backdrop-blur-md shadow-sm">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Tersedia
+                </span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-900/80 text-teal-300 border border-teal-400/30 backdrop-blur-md">
+                  Poli Umum
+                </span>
+              </div>
+
+              <!-- Rating & Pengalaman -->
+              <div class="absolute bottom-3 left-3 right-3 text-white">
+                <div class="flex items-center gap-1 text-[11px] text-amber-400 font-bold mb-0.5">
+                  <i class="fa-solid fa-star"></i>
+                  <span>4.9</span>
+                  <span class="text-slate-300 text-[10px] font-normal">(1.200+ Pasien)</span>
+                </div>
+                <div class="text-[11px] text-teal-200 font-medium">FK Universitas Indonesia</div>
+              </div>
+            </div>
+
+            <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
+              <div class="space-y-1">
+                <h3 class="font-extrabold text-slate-900 text-sm group-hover:text-medical-teal transition leading-snug">
+                  dr. Nasril Al-Farabi, M.Kes
+                </h3>
+                <p class="text-xs font-semibold text-medical-teal">Dokter Umum & Layanan Primer</p>
+                <div class="pt-1.5 border-t border-slate-100 text-[10px] text-slate-500 space-y-0.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">SIP:</span>
+                    <span class="font-mono text-slate-700 font-semibold">SIP-446/DKK/2022/01</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Jadwal:</span>
+                    <span class="text-slate-700 font-semibold">Senin - Sabtu (08-17 WIB)</span>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="bookingDenganDokter(1, 1)" class="w-full py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-medical-teal text-medical-teal hover:text-white font-bold text-xs border border-slate-200/80 hover:border-transparent transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-calendar-plus text-[11px]"></i>
+                <span>Jadwalkan Konsultasi</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dokter 2: drg. Amanda Putri, Sp.KG -->
+          <div class="group bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-subtle hover:shadow-card-hover hover:border-teal-400 transition-all duration-300 flex flex-col overflow-hidden">
+            <div class="relative h-56 sm:h-60 bg-gradient-to-t from-slate-900 via-slate-800 to-slate-700 overflow-hidden">
+              <img src="https://images.unsplash.com/photo-1594824813524-c10a430c511d?auto=format&fit=crop&w=600&q=80" 
+                   alt="drg. Amanda Putri, Sp.KG" 
+                   class="w-full h-full object-cover object-top group-hover:scale-105 transition-all duration-500"
+                   onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=600&q=80';">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
+              
+              <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-slate-800 backdrop-blur-md shadow-sm">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Tersedia
+                </span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-900/80 text-teal-300 border border-teal-400/30 backdrop-blur-md">
+                  Poli Gigi
+                </span>
+              </div>
+
+              <div class="absolute bottom-3 left-3 right-3 text-white">
+                <div class="flex items-center gap-1 text-[11px] text-amber-400 font-bold mb-0.5">
+                  <i class="fa-solid fa-star"></i>
+                  <span>4.9</span>
+                  <span class="text-slate-300 text-[10px] font-normal">(980+ Pasien)</span>
+                </div>
+                <div class="text-[11px] text-teal-200 font-medium">FKG Univ. Padjadjaran</div>
+              </div>
+            </div>
+
+            <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
+              <div class="space-y-1">
+                <h3 class="font-extrabold text-slate-900 text-sm group-hover:text-medical-teal transition leading-snug">
+                  drg. Amanda Putri, Sp.KG
+                </h3>
+                <p class="text-xs font-semibold text-medical-teal">Spesialis Konservasi Gigi</p>
+                <div class="pt-1.5 border-t border-slate-100 text-[10px] text-slate-500 space-y-0.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">SIP:</span>
+                    <span class="font-mono text-slate-700 font-semibold">SIP-446/DKK/2021/08</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Jadwal:</span>
+                    <span class="text-slate-700 font-semibold">Senin - Sabtu (08-17 WIB)</span>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="bookingDenganDokter(2, 2)" class="w-full py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-medical-teal text-medical-teal hover:text-white font-bold text-xs border border-slate-200/80 hover:border-transparent transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-calendar-plus text-[11px]"></i>
+                <span>Jadwalkan Konsultasi</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dokter 3: dr. Budi Santoso, Sp.A -->
+          <div class="group bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-subtle hover:shadow-card-hover hover:border-teal-400 transition-all duration-300 flex flex-col overflow-hidden">
+            <div class="relative h-56 sm:h-60 bg-gradient-to-t from-slate-900 via-slate-800 to-slate-700 overflow-hidden">
+              <img src="https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=600&q=80" 
+                   alt="dr. Budi Santoso, Sp.A" 
+                   class="w-full h-full object-cover object-top group-hover:scale-105 transition-all duration-500"
+                   onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=600&q=80';">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
+              
+              <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-slate-800 backdrop-blur-md shadow-sm">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Tersedia
+                </span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-900/80 text-teal-300 border border-teal-400/30 backdrop-blur-md">
+                  Poli Anak
+                </span>
+              </div>
+
+              <div class="absolute bottom-3 left-3 right-3 text-white">
+                <div class="flex items-center gap-1 text-[11px] text-amber-400 font-bold mb-0.5">
+                  <i class="fa-solid fa-star"></i>
+                  <span>5.0</span>
+                  <span class="text-slate-300 text-[10px] font-normal">(1.500+ Pasien)</span>
+                </div>
+                <div class="text-[11px] text-teal-200 font-medium">FK Universitas Gadjah Mada</div>
+              </div>
+            </div>
+
+            <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
+              <div class="space-y-1">
+                <h3 class="font-extrabold text-slate-900 text-sm group-hover:text-medical-teal transition leading-snug">
+                  dr. Budi Santoso, Sp.A
+                </h3>
+                <p class="text-xs font-semibold text-medical-teal">Spesialis Anak & Pediatri</p>
+                <div class="pt-1.5 border-t border-slate-100 text-[10px] text-slate-500 space-y-0.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">SIP:</span>
+                    <span class="font-mono text-slate-700 font-semibold">SIP-446/DKK/2020/12</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Jadwal:</span>
+                    <span class="text-slate-700 font-semibold">Senin - Sabtu (08-17 WIB)</span>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="bookingDenganDokter(3, 3)" class="w-full py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-medical-teal text-medical-teal hover:text-white font-bold text-xs border border-slate-200/80 hover:border-transparent transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-calendar-plus text-[11px]"></i>
+                <span>Jadwalkan Konsultasi</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dokter 4: dr. Citra Lestari, Sp.PD -->
+          <div class="group bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-subtle hover:shadow-card-hover hover:border-teal-400 transition-all duration-300 flex flex-col overflow-hidden">
+            <div class="relative h-56 sm:h-60 bg-gradient-to-t from-slate-900 via-slate-800 to-slate-700 overflow-hidden">
+              <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=600&q=80" 
+                   alt="dr. Citra Lestari, Sp.PD" 
+                   class="w-full h-full object-cover object-top group-hover:scale-105 transition-all duration-500"
+                   onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1594824813524-c10a430c511d?auto=format&fit=crop&w=600&q=80';">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
+              
+              <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-slate-800 backdrop-blur-md shadow-sm">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Tersedia
+                </span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-900/80 text-teal-300 border border-teal-400/30 backdrop-blur-md">
+                  Penyakit Dalam
+                </span>
+              </div>
+
+              <div class="absolute bottom-3 left-3 right-3 text-white">
+                <div class="flex items-center gap-1 text-[11px] text-amber-400 font-bold mb-0.5">
+                  <i class="fa-solid fa-star"></i>
+                  <span>4.9</span>
+                  <span class="text-slate-300 text-[10px] font-normal">(1.100+ Pasien)</span>
+                </div>
+                <div class="text-[11px] text-teal-200 font-medium">FK Univ. Diponegoro</div>
+              </div>
+            </div>
+
+            <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
+              <div class="space-y-1">
+                <h3 class="font-extrabold text-slate-900 text-sm group-hover:text-medical-teal transition leading-snug">
+                  dr. Citra Lestari, Sp.PD
+                </h3>
+                <p class="text-xs font-semibold text-medical-teal">Spesialis Penyakit Dalam</p>
+                <div class="pt-1.5 border-t border-slate-100 text-[10px] text-slate-500 space-y-0.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">SIP:</span>
+                    <span class="font-mono text-slate-700 font-semibold">SIP-446/DKK/2023/04</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Jadwal:</span>
+                    <span class="text-slate-700 font-semibold">Senin - Sabtu (08-17 WIB)</span>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="bookingDenganDokter(4, 4)" class="w-full py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-medical-teal text-medical-teal hover:text-white font-bold text-xs border border-slate-200/80 hover:border-transparent transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-calendar-plus text-[11px]"></i>
+                <span>Jadwalkan Konsultasi</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dokter 5: dr. Eko Prasetyo, Sp.M -->
+          <div class="group bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-subtle hover:shadow-card-hover hover:border-teal-400 transition-all duration-300 flex flex-col overflow-hidden">
+            <div class="relative h-56 sm:h-60 bg-gradient-to-t from-slate-900 via-slate-800 to-slate-700 overflow-hidden">
+              <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=600&q=80" 
+                   alt="dr. Eko Prasetyo, Sp.M" 
+                   class="w-full h-full object-cover object-top group-hover:scale-105 transition-all duration-500"
+                   onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=600&q=80';">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
+              
+              <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-slate-800 backdrop-blur-md shadow-sm">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Tersedia
+                </span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-900/80 text-teal-300 border border-teal-400/30 backdrop-blur-md">
+                  Poli Mata
+                </span>
+              </div>
+
+              <div class="absolute bottom-3 left-3 right-3 text-white">
+                <div class="flex items-center gap-1 text-[11px] text-amber-400 font-bold mb-0.5">
+                  <i class="fa-solid fa-star"></i>
+                  <span>4.8</span>
+                  <span class="text-slate-300 text-[10px] font-normal">(850+ Pasien)</span>
+                </div>
+                <div class="text-[11px] text-teal-200 font-medium">FK Univ. Airlangga</div>
+              </div>
+            </div>
+
+            <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
+              <div class="space-y-1">
+                <h3 class="font-extrabold text-slate-900 text-sm group-hover:text-medical-teal transition leading-snug">
+                  dr. Eko Prasetyo, Sp.M
+                </h3>
+                <p class="text-xs font-semibold text-medical-teal">Spesialis Mata & Oftalmologi</p>
+                <div class="pt-1.5 border-t border-slate-100 text-[10px] text-slate-500 space-y-0.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">SIP:</span>
+                    <span class="font-mono text-slate-700 font-semibold">SIP-446/DKK/2022/19</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Jadwal:</span>
+                    <span class="text-slate-700 font-semibold">Senin - Sabtu (08-17 WIB)</span>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="bookingDenganDokter(5, 5)" class="w-full py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-medical-teal text-medical-teal hover:text-white font-bold text-xs border border-slate-200/80 hover:border-transparent transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-calendar-plus text-[11px]"></i>
+                <span>Jadwalkan Konsultasi</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- SECTION PENGHARGAAN, AKREDITASI KARS PARIPURNA & SERTIFIKASI MUTU       -->
+      <!-- ======================================================================= -->
+      <section id="section-akreditasi" class="space-y-5 pt-3 pb-2">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 mb-2">
+              <i class="fa-solid fa-trophy text-amber-500"></i>
+              <span>Standar Keunggulan & Jaminan Keselamatan Pasien</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Akreditasi & Sertifikasi Mutu Medis</h2>
+            <p class="text-xs sm:text-sm text-slate-500 max-w-2xl mt-1">
+              Komitmen konsisten RS Politeknik LP3I Jakarta dalam menerapkan tata kelola klinis berstandar Paripurna (Bintang 5) dari KARS RI dan kepatuhan sistem manajemen mutu internasional ISO 9001:2015.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-mono text-slate-500 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-subtle flex items-center gap-1.5">
+              <i class="fa-solid fa-certificate text-teal-600"></i>
+              <span>Status: Terakreditasi Paripurna (Aktif)</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Showcase Banners & Stat Cards -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          
+          <!-- Banner Penghargaan Utama (Plaque & Trophy) -->
+          <div class="lg:col-span-7 bg-white rounded-3xl border border-slate-200/80 shadow-float overflow-hidden flex flex-col group">
+            <div class="relative overflow-hidden h-64 sm:h-72 bg-slate-900">
+              <img src="awards_accreditation.jpg" 
+                   alt="Piala Penghargaan Akreditasi Paripurna KARS Bintang 5 dan ISO 9001 RS Politeknik LP3I" 
+                   class="w-full h-full object-cover object-center group-hover:scale-105 transition-all duration-700">
+              
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent flex flex-col justify-end p-6 text-white">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/40 backdrop-blur-md w-max mb-2">
+                  <i class="fa-solid fa-star text-amber-400"></i>
+                  <span>Akreditasi Paripurna (Tingkat Bintang Lima Tertinggi)</span>
+                </div>
+                <h3 class="text-lg sm:text-xl font-black leading-tight text-white">
+                  Pengakuan Tertinggi Mutu & Keselamatan Pasien KARS RI
+                </h3>
+                <p class="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+                  Dianugerahi oleh Komisi Akreditasi Rumah Sakit (KARS) dan Kementerian Kesehatan RI atas konsistensi penerapan keselamatan pasien, pencegahan infeksi, dan integrasi rekam medis pintar.
+                </p>
+              </div>
+            </div>
+
+            <!-- Footer Card Metrics -->
+            <div class="p-5 bg-slate-50/60 flex-grow grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs border-t border-slate-100">
+              <div class="space-y-1">
+                <div class="text-slate-400 font-medium">Lembaga Penilai Resmi:</div>
+                <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                  <i class="fa-solid fa-building-columns text-medical-teal"></i>
+                  <span>KARS & Kemenkes RI</span>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-slate-400 font-medium">Predikat Kelulusan:</div>
+                <div class="font-bold text-emerald-700 flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                  <span>Paripurna (Bintang 5)</span>
+                </div>
+              </div>
+              <div class="space-y-1 col-span-2 sm:col-span-1">
+                <div class="text-slate-400 font-medium">Masa Sertifikasi:</div>
+                <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar-check text-slate-500"></i>
+                  <span>2026 s.d 2031 (5 Tahun)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Showcase Sertifikat Mutu & 4 Mini Badges -->
+          <div class="lg:col-span-5 flex flex-col gap-4">
+            
+            <!-- Banner Sertifikat ISO 9001 & SIM-RS Inovasi -->
+            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-float overflow-hidden group">
+              <div class="relative overflow-hidden h-44 sm:h-48 bg-slate-900">
+                <img src="awards_certificate.jpg" 
+                     alt="Sertifikat Akreditasi KARS dan ISO 9001 RS Politeknik LP3I" 
+                     class="w-full h-full object-cover object-center group-hover:scale-105 transition-all duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent flex flex-col justify-end p-4 text-white">
+                  <span class="text-[10px] font-mono tracking-wider text-teal-300 font-bold uppercase">Manajemen Mutu Pelayanan</span>
+                  <h4 class="text-sm font-extrabold text-white">Sertifikasi ISO 9001:2015 & RME Kemenkes</h4>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4 Badges/Cards Grid -->
+            <div class="grid grid-cols-2 gap-3 flex-grow">
+              <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-subtle flex flex-col justify-between">
+                <div class="w-9 h-9 rounded-xl bg-teal-50 text-medical-teal flex items-center justify-center text-base mb-2">
+                  <i class="fa-solid fa-shield-heart"></i>
+                </div>
+                <div>
+                  <div class="font-extrabold text-slate-900 text-xs">SATUSEHAT Valid</div>
+                  <div class="text-[11px] text-slate-500 mt-0.5">Integrasi 100% Rekam Medis Elektronik Terpusat</div>
+                </div>
+              </div>
+
+              <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-subtle flex flex-col justify-between">
+                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base mb-2">
+                  <i class="fa-solid fa-trophy"></i>
+                </div>
+                <div>
+                  <div class="font-extrabold text-slate-900 text-xs">Inovasi SIM-RS 2026</div>
+                  <div class="text-[11px] text-slate-500 mt-0.5">Smart Patient Registration & Kiosk 1-Klik Mandiri</div>
+                </div>
+              </div>
+
+              <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-subtle flex flex-col justify-between">
+                <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base mb-2">
+                  <i class="fa-solid fa-certificate"></i>
+                </div>
+                <div>
+                  <div class="font-extrabold text-slate-900 text-xs">ISO 9001:2015</div>
+                  <div class="text-[11px] text-slate-500 mt-0.5">Standar Tata Kelola & Sistem Manajemen Mutu Klinis</div>
+                </div>
+              </div>
+
+              <div class="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-subtle flex flex-col justify-between">
+                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base mb-2">
+                  <i class="fa-solid fa-heart-circle-check"></i>
+                </div>
+                <div>
+                  <div class="font-extrabold text-slate-900 text-xs">99.4% Kepuasan</div>
+                  <div class="text-[11px] text-slate-500 mt-0.5">Indeks Kepuasan Pasien Rawat Jalan & Kiosk Lobi</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- 2. PORTAL FORMULIR PENDAFTARAN RAWAT JALAN ONLINE                       -->
+    <!-- ======================================================================= -->
+    <div id="tab-pasien" class="tab-content hidden space-y-8">
+
+      <!-- Breadcrumb Navigasi -->
+      <div class="flex items-center justify-between pb-2 border-b border-slate-200/60">
+        <div class="flex items-center space-x-2 text-xs text-slate-500">
+          <button onclick="switchTab('beranda')" class="hover:text-medical-teal font-medium">Beranda</button>
+          <span>/</span>
+          <span class="text-slate-800 font-bold">Pendaftaran Rawat Jalan Online</span>
+        </div>
+        <button onclick="openTermsModal()" class="text-xs text-medical-teal font-semibold flex items-center gap-1 hover:underline">
+          <i class="fa-solid fa-file-contract"></i>
+          <span>Baca Ulang Syarat & Ketentuan</span>
+        </button>
+      </div>
+
+      <!-- Segmented Tabs Pasien Baru vs Pasien Lama -->
+      <section class="space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button type="button" onclick="setPatientType('baru')" id="btn-mode-baru" class="group relative p-4 sm:p-5 rounded-2xl border-2 transition-all duration-200 text-left bg-white border-medical-teal shadow-sm focus:outline-none">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3.5">
+                <div id="icon-container-baru" class="w-11 h-11 rounded-xl bg-medical-teal text-white flex items-center justify-center text-base shadow-sm transition group-hover:scale-105">
+                  <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-extrabold text-slate-900 text-sm sm:text-base">Pasien Baru</h3>
+                    <span id="badge-baru" class="bg-teal-100 text-medical-teal text-[10px] font-bold px-2 py-0.5 rounded-full">Aktif</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-0.5">Belum memiliki No. Rekam Medis (RM). Penerbitan otomatis.</p>
+                </div>
+              </div>
+              <div id="check-baru" class="w-5 h-5 rounded-full bg-medical-teal text-white flex items-center justify-center text-[10px] flex-shrink-0">
+                <i class="fa-solid fa-check"></i>
+              </div>
+            </div>
+          </button>
+
+          <button type="button" onclick="setPatientType('lama')" id="btn-mode-lama" class="group relative p-4 sm:p-5 rounded-2xl border-2 transition-all duration-200 text-left bg-white border-slate-200 hover:border-slate-300 shadow-subtle focus:outline-none">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3.5">
+                <div id="icon-container-lama" class="w-11 h-11 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-base transition group-hover:scale-105">
+                  <i class="fa-solid fa-id-card"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-extrabold text-slate-900 text-sm sm:text-base">Pasien Lama (Kontrol)</h3>
+                    <span id="badge-lama" class="hidden bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Pilih</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-0.5">Sudah pernah berobat. Cukup masukkan Nomor RM atau NIK.</p>
+                </div>
+              </div>
+              <div id="check-lama" class="hidden w-5 h-5 rounded-full bg-medical-teal text-white flex items-center justify-center text-[10px] flex-shrink-0">
+                <i class="fa-solid fa-check"></i>
+              </div>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- Formulir Pendaftaran & Kuota Live (2 Kolom) -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+
+        <!-- Kolom Kiri: Formulir -->
+        <div class="lg:col-span-7 bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-float p-6 sm:p-8 space-y-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div>
+              <h3 id="form-title" class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Formulir Pendaftaran Pasien Baru</h3>
+              <p id="form-subtitle" class="text-xs text-slate-500 mt-0.5">Lengkapi identitas diri Anda untuk penerbitan Nomor Rekam Medis</p>
+            </div>
+            <button type="button" onclick="fillDummyData()" class="text-xs text-slate-500 hover:text-medical-teal font-medium inline-flex items-center gap-1.5 transition py-1.5 px-2.5 rounded-lg hover:bg-teal-50 border border-transparent hover:border-teal-200">
+              <i class="fa-solid fa-wand-magic-sparkles text-teal-600"></i>
+              <span>Isi Data Contoh</span>
+            </button>
+          </div>
+
+          <div id="patient-alert" class="hidden p-4 rounded-xl text-xs sm:text-sm font-semibold transition"></div>
+
+          <form id="form-pendaftaran" onsubmit="handleRegistrationSubmit(event)" class="space-y-5">
+            
+            <div id="section-pasien-baru" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Nomor Induk Kependudukan (NIK) <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="text" id="reg-nik" maxlength="16" placeholder="Contoh: 3171012304950001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 placeholder-slate-400 font-medium" required>
+                  <span class="text-[10px] text-slate-400 mt-1 block">Wajib 16 digit angka sesuai KTP/KK</span>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Nama Lengkap Pasien <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="text" id="reg-nama" placeholder="Sesuai kartu identitas resmi" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 placeholder-slate-400 font-medium" required>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Jenis Kelamin <span class="text-rose-500">*</span>
+                  </label>
+                  <select id="reg-jk" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 font-medium" required>
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Tanggal Lahir <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="date" id="reg-tgl-lahir" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 font-medium" required>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Golongan Darah
+                  </label>
+                  <select id="reg-goldar" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 font-medium">
+                    <option value="-">- (Belum Tahu)</option>
+                    <option value="A">Golongan A</option>
+                    <option value="B">Golongan B</option>
+                    <option value="AB">Golongan AB</option>
+                    <option value="O">Golongan O</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Nomor WhatsApp / HP <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="tel" id="reg-nohp" placeholder="08xxxxxxxxxx" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 font-medium" required>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Alamat Tempat Tinggal <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="text" id="reg-alamat" placeholder="Jl. ... No. ..., Kelurahan, Kecamatan" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 font-medium" required>
+                </div>
+              </div>
+            </div>
+
+            <div id="section-pasien-lama" class="hidden space-y-3 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Nomor Rekam Medis (RM) atau NIK Terdaftar <span class="text-rose-500">*</span>
+              </label>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input type="text" id="reg-identifier-lama" placeholder="Contoh: RM-2026-0001 atau 3171012304950001" class="flex-grow px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none bg-white font-mono">
+                <button type="button" onclick="cariPasienLama()" class="px-5 py-2.5 bg-medical-teal hover:bg-medical-teal-dark text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1 shadow-sm">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <span>Cek Data Pasien</span>
+                </button>
+              </div>
+              <div id="info-pasien-lama" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 space-y-3">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Jenis Penjamin Biaya</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="flex items-center p-3 rounded-xl border-2 border-medical-teal bg-teal-50/40 cursor-pointer transition" id="card-penjamin-umum">
+                  <input type="radio" name="penjamin" value="UMUM" checked onchange="togglePenjamin(this.value)" class="text-medical-teal focus:ring-teal-500 h-4 w-4">
+                  <div class="ml-3">
+                    <div class="text-xs font-bold text-slate-900">Pasien Mandiri / Umum</div>
+                    <div class="text-[10px] text-slate-500">Pembayaran tunai, debit, atau QRIS</div>
+                  </div>
+                </label>
+
+                <label class="flex items-center p-3 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 cursor-pointer transition" id="card-penjamin-bpjs">
+                  <input type="radio" name="penjamin" value="BPJS" onchange="togglePenjamin(this.value)" class="text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                  <div class="ml-3">
+                    <div class="text-xs font-bold text-slate-900 flex items-center">
+                      <span>BPJS Kesehatan</span>
+                      <span class="ml-1.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded">Aktif</span>
+                    </div>
+                    <div class="text-[10px] text-slate-500">Ditanggung sesuai rujukan faskes tingkat 1</div>
+                  </div>
+                </label>
+              </div>
+
+              <div id="bpjs-input-container" class="mt-2.5 hidden">
+                <label class="block text-xs font-bold text-emerald-900 mb-1">Nomor Kartu BPJS Kesehatan (13 Digit) <span class="text-rose-500">*</span></label>
+                <input type="text" id="reg-nobpjs" maxlength="13" placeholder="Contoh: 0001234567891" class="w-full px-3.5 py-2 rounded-xl border border-emerald-300 focus:ring-2 focus:ring-emerald-600 text-sm outline-none bg-white font-mono">
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Poliklinik Tujuan <span class="text-rose-500">*</span>
+                  </label>
+                  <select id="reg-poli" onchange="loadDokterByPoli(this.value)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 font-semibold" required>
+                    <option value="">-- Memuat Poliklinik... --</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Dokter Spesialis <span class="text-rose-500">*</span>
+                  </label>
+                  <select id="reg-dokter" onchange="triggerQuotaCheck()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 font-semibold" required disabled>
+                    <option value="">-- Pilih Poliklinik Terlebih Dahulu --</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Tanggal Rencana Kunjungan <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="date" id="reg-tgl-kunjungan" onchange="triggerQuotaCheck()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 font-semibold" required>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Sesi Waktu Praktik
+                  </label>
+                  <select id="reg-sesi" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 font-semibold">
+                    <option value="Sesi Pagi (08:00 - 12:00)">Sesi Pagi (08:00 - 12:00 WIB)</option>
+                    <option value="Sesi Siang (13:00 - 17:00)">Sesi Siang (13:00 - 17:00 WIB)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Keluhan Awal / Gejala Sakit
+                </label>
+                <textarea id="reg-keluhan" rows="2" placeholder="Jelaskan ringkas keluhan fisik utama yang Anda rasakan..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-medical-teal focus:ring-4 focus:ring-teal-100/50 text-sm outline-none transition text-slate-900 placeholder-slate-400"></textarea>
+              </div>
+            </div>
+
+            <div class="pt-2">
+              <button type="submit" id="btn-submit-pendaftaran" class="w-full py-4 px-6 rounded-xl font-bold text-white bg-medical-teal hover:bg-medical-teal-dark active:scale-[0.99] transition shadow-teal-glow flex items-center justify-center space-x-2 text-sm sm:text-base cursor-pointer">
+                <i class="fa-solid fa-ticket-simple text-teal-200 text-base"></i>
+                <span>DAFTAR & TERBITKAN E-TIKET ANTREAN</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Kolom Kanan: Kuota Real-time Live -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-float p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-medical-teal"></i>
+                <span>Status Kuota Dokter Live</span>
+              </h4>
+
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-indicator"></span>
+                <span>Real-time</span>
+              </div>
+            </div>
+
+            <div id="quota-box-content" class="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 text-center transition">
+              <div class="w-12 h-12 mx-auto rounded-full bg-white border border-slate-200 text-slate-400 flex items-center justify-center text-lg mb-2 shadow-subtle">
+                <i class="fa-solid fa-stethoscope text-medical-teal"></i>
+              </div>
+              <p class="text-xs text-slate-700 font-bold">Pilih Dokter & Tanggal Kunjungan</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Sistem akan secara instan menampilkan sisa kapasitas antrean periksa.</p>
+            </div>
+          </div>
+
+          <!-- Cards Dokter Live -->
+          <div class="bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-float p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                  <i class="fa-solid fa-user-doctor text-medical-teal"></i>
+                  <span>Dokter Bertugas Hari Ini</span>
+                </h4>
+                <p class="text-[11px] text-slate-400">Pembaruan kapasitas slot dokter secara langsung</p>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400 font-semibold" id="live-today-date">2026-10-27</span>
+            </div>
+
+            <div class="space-y-3" id="live-doctor-cards">
+              <!-- Diisi otomatis dari JavaScript -->
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- 3. MESIN ANTREAN MANDIRI LOBI RS (KIOSK 1-KLIK AMBIL STRUK FISIK)      -->
+    <!-- ======================================================================= -->
+    <div id="tab-kiosk" class="tab-content hidden space-y-6">
+      
+      <div class="bg-gradient-to-br from-slate-900 to-medical-sapphire text-white p-6 sm:p-10 rounded-3xl shadow-xl space-y-4 text-center border border-slate-800">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          <i class="fa-solid fa-print"></i>
+          <span>MESIN ANTREAN MANDIRI LOBI RS (KIOSK ONSITE)</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-black tracking-tight">Ambil Nomor Antrean Fisik Sekali Klik</h2>
+        <p class="text-slate-300 text-xs sm:text-sm max-w-xl mx-auto">
+          Sentuh poliklinik tujuan Anda di bawah ini untuk langsung menerbitkan struk fisik ber-QR Code untuk verifikasi di meja admisi.
+        </p>
+      </div>
+
+      <!-- Pilihan Penjamin di Mesin Kiosk -->
+      <div class="flex justify-center items-center gap-3">
+        <span class="text-xs font-bold text-slate-600">Pilih Kategori Penjamin:</span>
+        <button type="button" onclick="setKioskPenjamin('UMUM')" id="kiosk-penj-umum" class="px-4 py-2 rounded-xl text-xs font-bold bg-medical-teal text-white shadow-sm transition">
+          Pasien Umum / Mandiri
+        </button>
+        <button type="button" onclick="setKioskPenjamin('BPJS')" id="kiosk-penj-bpjs" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:border-emerald-500 transition">
+          BPJS Kesehatan
+        </button>
+      </div>
+
+      <!-- Tombol Besar Poliklinik (Touch-Friendly Kiosk) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="kiosk-poli-container">
+        <!-- Rendered by JS -->
+      </div>
+
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- 4. PORTAL MEJA ADMISI & SCANNER QR CODE                                 -->
+    <!-- ======================================================================= -->
+    <div id="tab-admisi" class="tab-content hidden space-y-6">
+      <div class="bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-float p-6 sm:p-8 space-y-6">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-id-card-clip text-emerald-600"></i>
+              <span>Meja Admisi & Verifikasi Scanner QR</span>
+            </h3>
+            <p class="text-xs text-slate-500">Scan QR Code E-Tiket atau struk fisik kiosk untuk verifikasi check-in instan.</p>
+          </div>
+          <button onclick="loadPendaftaranAdmisi()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center space-x-1.5 self-start">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Segarkan Data</span>
+          </button>
+        </div>
+
+        <!-- SCANNER QR CODE & BARCODE INPUT BOX -->
+        <div class="bg-gradient-to-r from-teal-50/80 to-blue-50/80 p-5 rounded-2xl border border-teal-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-extrabold uppercase tracking-wider text-medical-teal flex items-center gap-2">
+              <i class="fa-solid fa-qrcode text-base"></i>
+              <span>Input Scanner QR / Barcode / Kode Booking</span>
+            </label>
+            <span class="text-[10px] bg-teal-200/60 text-medical-teal font-bold px-2 py-0.5 rounded-full">Auto Check-in</span>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-grow">
+              <input type="text" id="admisi-scan-input" placeholder="Arahkan barcode scanner atau ketik: REG-... / KIOSK-... / POLI-..." class="w-full pl-3.5 pr-10 py-3 rounded-xl border border-teal-300 focus:ring-4 focus:ring-teal-100 text-sm font-mono outline-none bg-white font-bold" onkeypress="if(event.key==='Enter') verifikasiQrCodeAction()">
+              <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-teal-600">
+                <i class="fa-solid fa-barcode text-base"></i>
+              </div>
+            </div>
+            <button onclick="verifikasiQrCodeAction()" class="px-6 py-3 bg-medical-teal hover:bg-medical-teal-dark text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-sm flex-shrink-0">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Verifikasi & Check-in</span>
+            </button>
+          </div>
+
+          <div id="admisi-scan-feedback" class="hidden p-3 rounded-xl text-xs font-bold"></div>
+        </div>
+
+        <!-- Filter Panel Admisi -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Tanggal Kunjungan</label>
+            <input type="date" id="admisi-filter-tgl" onchange="loadPendaftaranAdmisi()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium bg-white">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Poliklinik</label>
+            <select id="admisi-filter-poli" onchange="loadPendaftaranAdmisi()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium bg-white">
+              <option value="">Semua Poliklinik</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Status Pendaftaran</label>
+            <select id="admisi-filter-status" onchange="loadPendaftaranAdmisi()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium bg-white">
+              <option value="">Semua Status</option>
+              <option value="MENUNGGU">Menunggu Check-in</option>
+              <option value="TERKONFIRMASI">Terkonfirmasi (Hadir)</option>
+              <option value="SELESAI">Selesai</option>
+              <option value="BATAL">Batal</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tabel Antrean Pasien -->
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-left text-xs text-slate-600">
+            <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
+              <tr>
+                <th class="p-3.5">No. Antrean</th>
+                <th class="p-3.5">Kode Booking</th>
+                <th class="p-3.5">Identitas Pasien</th>
+                <th class="p-3.5">Poli & Dokter</th>
+                <th class="p-3.5">Penjamin</th>
+                <th class="p-3.5">Status</th>
+                <th class="p-3.5 text-center">Tindakan Petugas</th>
+              </tr>
+            </thead>
+            <tbody id="admisi-table-body" class="divide-y divide-slate-100">
+              <tr><td colspan="7" class="p-6 text-center text-slate-400">Memuat data pendaftaran...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-slate-500 pt-2">
+          <span>Total Pendaftaran: <strong id="admisi-total-count" class="text-medical-teal font-bold">0</strong> pasien</span>
+          <span class="text-[11px] italic">Scan QR atau klik tombol "Check-in" saat pasien tiba</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- 5. RUANG DOKTER & INPUT REKAM MEDIS                                     -->
+    <!-- ======================================================================= -->
+    <div id="tab-dokter" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-float p-6 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-users text-medical-teal"></i>
+              <span>Antrean Menunggu</span>
+            </h4>
+            <span id="dokter-antrean-badge" class="bg-teal-50 text-medical-teal text-[10px] font-bold px-2 py-0.5 rounded-full border border-teal-200">0 Pasien</span>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Pilih Poliklinik Praktik Anda</label>
+            <select id="dokter-portal-poli" onchange="loadDokterAntreanList()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold bg-white"></select>
+          </div>
+
+          <div id="dokter-patient-queue" class="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+            <p class="text-xs text-slate-400 text-center py-6">Pilih poliklinik untuk menampilkan daftar antrean hadir.</p>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-float p-6 sm:p-8 space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+            <div>
+              <h4 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                <i class="fa-solid fa-clipboard-user text-medical-teal"></i>
+                <span>Pemeriksaan Klinis & Rekam Medis (RME)</span>
+              </h4>
+              <p id="current-patient-info" class="text-xs text-slate-500 mt-1">Pilih pasien di daftar sebelah kiri untuk memulai pemeriksaan.</p>
+            </div>
+
+            <button type="button" onclick="callQueueVoicePuskesmas()" id="btn-call-voice" class="hidden px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold rounded-xl transition shadow items-center space-x-1.5 self-start">
+              <i class="fa-solid fa-volume-high"></i>
+              <span>Panggil Suara Pasien</span>
+            </button>
+          </div>
+
+          <div id="rm-alert" class="hidden p-3 rounded-xl text-xs font-bold"></div>
+
+          <form id="form-rekam-medis" onsubmit="handleRekamMedisSubmit(event)" class="space-y-4">
+            <input type="hidden" id="rm-pendaftaran-id">
+            <input type="hidden" id="rm-nomor-rm">
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-1">Tekanan Darah</label>
+                <input type="text" id="rm-td" placeholder="120/80 mmHg" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-1">Suhu Tubuh (°C)</label>
+                <input type="number" step="0.1" id="rm-suhu" placeholder="36.5" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-1">Berat Badan (kg)</label>
+                <input type="number" step="0.5" id="rm-bb" placeholder="65" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-1">Tinggi Badan (cm)</label>
+                <input type="number" id="rm-tb" placeholder="170" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Keluhan Pasien (Anamnesa)</label>
+              <textarea id="rm-keluhan" rows="2" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs outline-none" required></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Diagnosa Medis (ICD-10)</label>
+                <input type="text" id="rm-diagnosa" placeholder="Contoh: J00 - Nasofaringitis Akut (Common Cold)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium outline-none" required>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Rencana Terapi / Resep Obat</label>
+                <input type="text" id="rm-terapi" placeholder="Paracetamol 500mg 3x1, Vitamin C 500mg" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium outline-none" required>
+              </div>
+            </div>
+
+            <div class="pt-2 flex justify-between items-center">
+              <button type="button" onclick="lihatRiwayatRM()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition border border-slate-200">
+                <i class="fa-solid fa-clock-rotate-left mr-1"></i> Riwayat Medis Pasien
+              </button>
+              <button type="submit" id="btn-submit-rm" disabled class="px-6 py-2.5 bg-medical-teal hover:bg-medical-teal-dark disabled:bg-slate-300 text-white font-bold text-xs rounded-xl transition shadow">
+                <i class="fa-solid fa-circle-check mr-1.5"></i> Simpan Hasil & Selesai
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- 6. DISPLAY LAYAR TV ANTREAN UTAMA                                       -->
+    <!-- ======================================================================= -->
+    <div id="tab-display" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-float p-8 sm:p-12 text-center space-y-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-medical-teal border border-teal-200">
+            <span class="w-2 h-2 rounded-full bg-medical-teal pulse-indicator"></span>
+            SEDANG DIPANGGIL
+          </div>
+          <div id="display-calling-number" class="text-6xl sm:text-7xl font-mono font-black text-medical-teal tracking-wider my-3 animate-pulse">
+            POLI-UMUM-001
+          </div>
+          <div id="display-calling-name" class="text-2xl font-bold text-slate-800">
+            Ahmad Fadillah
+          </div>
+          <div id="display-calling-poli" class="text-sm font-semibold text-medical-teal bg-teal-50 py-2 px-5 rounded-xl inline-block border border-teal-100">
+            Ruang Periksa Poliklinik Umum & Layanan Primer
+          </div>
+          <div class="pt-4">
+            <button onclick="callQueueVoicePuskesmas()" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl text-xs transition shadow flex items-center space-x-2 mx-auto">
+              <i class="fa-solid fa-volume-high"></i>
+              <span>Ulangi Panggilan Suara Puskesmas</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl md:rounded-3xl border border-slate-200/80 shadow-float p-6 space-y-4">
+          <h4 class="font-bold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2 pb-3 border-b border-slate-100">
+            <i class="fa-solid fa-forward text-medical-teal"></i>
+            <span>Antrean Pasien Berikutnya</span>
+          </h4>
+          <div id="display-next-queue" class="space-y-3">
+            <p class="text-xs text-slate-400 py-6 text-center">Memuat antrean...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- FOOTER RUMAH SAKIT POLITEKNIK LP3I JAKARTA (MODERN & ELEGAN)              -->
+  <!-- ========================================================================= -->
+  <footer class="bg-slate-950 text-slate-300 border-t border-slate-800/80 mt-12 pb-20 lg:pb-0 relative z-20">
+    <!-- Top Emergency Strip / Hotline Bar -->
+    <div class="bg-slate-900/90 border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-8 text-xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-sm animate-pulse">
+                <i class="fa-solid fa-phone-volume"></i>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Hotline Gawat Darurat (IGD 24 Jam)</div>
+                <a href="tel:02131905454" class="text-white font-extrabold hover:text-rose-400 transition text-sm font-mono">(021) 3190-5454</a>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">
+                <i class="fa-brands fa-whatsapp"></i>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">WhatsApp Pelayanan Pasien</div>
+                <a href="https://wa.me/6281234567890" target="_blank" class="text-white font-extrabold hover:text-emerald-400 transition text-sm font-mono">0812-3456-7890</a>
+              </div>
+            </div>
+
+            <div class="hidden xl:flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-location-dot"></i>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Lokasi Rumah Sakit</div>
+                <span class="text-white font-medium text-xs">Jl. Kramat Raya No. 7-9, Jakarta Pusat</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2.5">
+            <button onclick="openEmergencyModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-truck-medical"></i>
+              <span>Panggilan Darurat IGD</span>
+            </button>
+            <button onclick="startRegistrationFlow()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-900 bg-teal-400 hover:bg-teal-300 transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-calendar-check"></i>
+              <span>Daftar Online</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Footer Content (4 Columns) -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
+        
+        <!-- Col 1: Brand & Hospital Overview (4 cols) -->
+        <div class="lg:col-span-4 space-y-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-medical-teal to-teal-400 text-white flex items-center justify-center text-xl shadow-lg shadow-teal-500/20">
+              <i class="fa-solid fa-hospital"></i>
+            </div>
+            <div>
+              <div class="font-black text-white text-base tracking-tight leading-tight">RS POLITEKNIK LP3I</div>
+              <div class="text-[10px] text-teal-400 font-bold tracking-widest uppercase">Smart Hospital & Poliklinik Terpadu</div>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Rumah Sakit Politeknik LP3I Jakarta menghadirkan pelayanan kesehatan berstandar Paripurna KARS dengan integrasi sistem pintar pendaftaran mandiri (Smart Patient Registration), cetak struk antrean 1-klik di lobi, pemantauan kuota dokter live, dan Rekam Medis Elektronik (RME) terpadu.
+          </p>
+
+          <div class="pt-2 flex flex-wrap gap-2 text-[11px]">
+            <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-teal-300 font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-award text-amber-400"></i> KARS Paripurna
+            </span>
+            <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-teal-300 font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-shield-heart text-teal-400"></i> SATUSEHAT
+            </span>
+            <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-teal-300 font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-certificate text-indigo-400"></i> ISO 9001:2015
+            </span>
+          </div>
+
+          <div class="pt-2">
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Media Sosial Resmi</div>
+            <div class="flex items-center gap-2">
+              <a href="javascript:void(0)" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-teal-600 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800"><i class="fa-brands fa-youtube"></i></a>
+              <a href="javascript:void(0)" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-teal-600 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800"><i class="fa-brands fa-instagram"></i></a>
+              <a href="javascript:void(0)" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-teal-600 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800"><i class="fa-brands fa-linkedin-in"></i></a>
+              <a href="javascript:void(0)" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-teal-600 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800"><i class="fa-brands fa-facebook-f"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Col 2: Poliklinik & Layanan Spesialis (3 cols) -->
+        <div class="lg:col-span-3 space-y-3">
+          <h4 class="text-sm font-extrabold text-white uppercase tracking-wider border-b border-slate-800 pb-2">
+            Layanan Poliklinik
+          </h4>
+          <ul class="space-y-2 text-xs text-slate-400">
+            <li><button onclick="pilihPoliDariBeranda(1)" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Poliklinik Umum & Layanan Primer</button></li>
+            <li><button onclick="pilihPoliDariBeranda(2)" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Poliklinik Konservasi Gigi & Mulut</button></li>
+            <li><button onclick="pilihPoliDariBeranda(3)" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Poliklinik Spesialis Anak (Pediatri)</button></li>
+            <li><button onclick="pilihPoliDariBeranda(4)" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Poliklinik Penyakit Dalam (Internis)</button></li>
+            <li><button onclick="pilihPoliDariBeranda(5)" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Poliklinik Spesialis Mata (Oftalmologi)</button></li>
+            <li><button onclick="openEmergencyModal()" class="hover:text-rose-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-rose-500"></i> IGD & Trauma Center 24 Jam</button></li>
+            <li><a href="javascript:void(0)" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Laboratorium & Farmasi Klinis 24 Jam</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Akses Pasien & Fasilitas Digital (2 cols) -->
+        <div class="lg:col-span-2 space-y-3">
+          <h4 class="text-sm font-extrabold text-white uppercase tracking-wider border-b border-slate-800 pb-2">
+            Akses Pasien
+          </h4>
+          <ul class="space-y-2 text-xs text-slate-400">
+            <li><button onclick="startRegistrationFlow()" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Daftar Rawat Jalan</button></li>
+            <li><button onclick="switchTab('kiosk')" class="hover:text-amber-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-amber-500"></i> Kiosk Mandiri Lobi</button></li>
+            <li><button onclick="switchTab('display')" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Monitor TV Antrean</button></li>
+            <li><button onclick="openTermsModal()" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Syarat & Ketentuan</button></li>
+            <li><button onclick="testChimeAndVoice()" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Uji Suara Puskesmas</button></li>
+            <li><button onclick="switchTab('admisi')" class="hover:text-teal-400 transition flex items-center gap-2 text-left"><i class="fa-solid fa-chevron-right text-[9px] text-teal-500"></i> Admisi & Scan QR</button></li>
+          </ul>
+        </div>
+
+        <!-- Col 4: Jam Operasional & Lokasi Kampus (3 cols) -->
+        <div class="lg:col-span-3 space-y-3">
+          <h4 class="text-sm font-extrabold text-white uppercase tracking-wider border-b border-slate-800 pb-2">
+            Jam Layanan & Alamat
+          </h4>
+          <div class="space-y-2.5 text-xs text-slate-400">
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+              <div class="text-white font-bold flex items-center gap-1.5">
+                <i class="fa-regular fa-clock text-teal-400"></i>
+                <span>Poliklinik Rawat Jalan:</span>
+              </div>
+              <div class="text-[11px] text-slate-300">Senin &ndash; Sabtu: 08:00 &ndash; 17:00 WIB</div>
+              <div class="text-[10px] text-slate-500">(Sesi Pagi: 08:00-12:00 | Sesi Siang: 13:00-17:00)</div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-rose-950/40 border border-rose-900/60 space-y-1">
+              <div class="text-rose-300 font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-heart-pulse text-rose-400"></i>
+                <span>Gawat Darurat & Farmasi:</span>
+              </div>
+              <div class="text-[11px] text-rose-200 font-semibold">Buka 24 Jam Non-Stop (Setiap Hari Termasuk Libur)</div>
+            </div>
+
+            <div class="pt-1 text-[11px] text-slate-400 space-y-1">
+              <div><strong class="text-slate-200">Institusi:</strong> Politeknik LP3I Jakarta</div>
+              <div><strong class="text-slate-200">Email:</strong> info@rs-politekniklp3i.ac.id</div>
+              <div><strong class="text-slate-200">Alamat:</strong> Jl. Kramat Raya No. 7-9, Kwitang, Kec. Senen, Kota Jakarta Pusat 10450</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom Attribution & Copyright Bar -->
+    <div class="bg-slate-950 border-t border-slate-900 py-6">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400 text-center md:text-left">
+        <div>
+          <div>&copy; 2026 <strong>RS Politeknik LP3I Jakarta</strong>. Seluruh Hak Cipta Dilindungi Undang-Undang.</div>
+          <div class="text-[11px] text-slate-400 mt-1">
+            Rancang Bangun Aplikasi Cerdas oleh: <span class="text-teal-400 font-bold">Hamzah Fadhila</span> (NIM: <span class="font-mono text-slate-300">240444020019</span>) &bull; D3 Manajemen Informatika Politeknik LP3I Jakarta
+          </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-3 sm:gap-4 text-[11px] text-slate-400">
+          <a href="javascript:void(0)" onclick="openTermsModal()" class="hover:text-teal-400 transition">Syarat & Ketentuan</a>
+          <span>&bull;</span>
+          <a href="javascript:void(0)" class="hover:text-teal-400 transition">Kebijakan Privasi</a>
+          <span>&bull;</span>
+          <a href="javascript:void(0)" class="hover:text-teal-400 transition">Standar KARS</a>
+          <span>&bull;</span>
+          <a href="javascript:void(0)" class="hover:text-teal-400 transition">Sitemap</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 1: SYARAT & KETENTUAN PENDAFTARAN PASIEN                            -->
+  <!-- ========================================================================= -->
+  <div id="modal-terms" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-medical-teal p-5 text-white flex justify-between items-center">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+            <i class="fa-solid fa-file-contract text-white"></i>
+          </div>
+          <div>
+            <span class="font-extrabold text-sm tracking-wide block">Syarat & Ketentuan Pendaftaran</span>
+            <span class="text-[10px] text-teal-100">RS Politeknik LP3I Jakarta</span>
+          </div>
+        </div>
+        <button onclick="closeTermsModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto text-xs text-slate-600 leading-relaxed">
+        <div class="p-3 bg-teal-50 border border-teal-200 rounded-xl text-teal-900 font-semibold text-[11px] flex items-start gap-2">
+          <i class="fa-solid fa-circle-info text-teal-600 mt-0.5"></i>
+          <span>Mohon membaca dan menyetujui ketentuan pendaftaran rawat jalan sebelum melanjutkan ke formulir registrasi.</span>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <h4 class="font-bold text-slate-900 text-xs">1. Ketentuan Waktu Kehadiran & Check-in</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Pasien wajib hadir di rumah sakit sekurang-kurangnya 15 menit sebelum sesi waktu pemeriksaan dimulai dan melakukan check-in via QR Code di Meja Admisi.</p>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-900 text-xs">2. Keabsahan Identitas & Rujukan BPJS</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Pasien menjamin keabsahan Nomor Induk Kependudukan (NIK) e-KTP. Pasien BPJS Kesehatan wajib memiliki kartu aktif dan surat rujukan faskes tingkat 1 yang masih berlaku.</p>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-900 text-xs">3. Kuota Dokter & Hak Pemeriksaan</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Penerbitan E-Tiket antrean tunduk pada ketersediaan kuota dokter real-time. Jika terjadi keadaan darurat dokter berhalangan, pihak RS akan menghubungi via WhatsApp terdaftar.</p>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-900 text-xs">4. Privasi Data & Integrasi SATUSEHAT</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Data rekam medis elektronik Anda dilindungi undang-undang kerahasiaan medis dan terhubung secara aman dengan platform SATUSEHAT Kementerian Kesehatan Republik Indonesia.</p>
+          </div>
+        </div>
+
+        <!-- Checkbox Persetujuan -->
+        <div class="pt-3 border-t border-slate-200">
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" id="terms-agree-check" onchange="toggleAgreeButton(this.checked)" class="mt-0.5 text-medical-teal focus:ring-teal-500 h-4 w-4 rounded">
+            <span class="text-xs font-bold text-slate-800">
+              Saya telah membaca, memahami, dan menyetujui seluruh Syarat & Ketentuan Pendaftaran Pasien RS Politeknik LP3I Jakarta.
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+        <button onclick="closeTermsModal()" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition">
+          Batal
+        </button>
+        <button id="btn-proceed-reg" onclick="proceedToRegistrationForm()" disabled class="px-5 py-2.5 bg-medical-teal hover:bg-medical-teal-dark disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+          <span>Setuju & Lanjutkan Formulir</span>
+          <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 2: LAYANAN GAWAT DARURAT (IGD 24 JAM & AMBULANS CEPAT)             -->
+  <!-- ========================================================================= -->
+  <div id="modal-emergency" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-rose-300 animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-gradient-to-r from-rose-700 to-red-800 p-5 text-white flex justify-between items-center">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg animate-pulse">
+            <i class="fa-solid fa-truck-medical"></i>
+          </div>
+          <div>
+            <span class="font-black text-sm tracking-wide block">INSTALASI GAWAT DARURAT (IGD 24 JAM)</span>
+            <span class="text-[10px] text-rose-200">RS Politeknik LP3I Jakarta &bull; Layanan Cepat Tanggap</span>
+          </div>
+        </div>
+        <button onclick="closeEmergencyModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-5 text-xs text-slate-700">
+        <!-- Hotline Box -->
+        <div class="bg-rose-50 border-2 border-rose-200 p-4 rounded-2xl text-center space-y-2">
+          <div class="text-[11px] font-bold text-rose-900 uppercase tracking-wider">Hotline Telepon Gawat Darurat (24 Jam Bebas Pulsa)</div>
+          <a href="tel:02131905454" class="inline-flex items-center gap-2 text-2xl sm:text-3xl font-black text-rose-600 hover:text-rose-700 font-mono tracking-wider">
+            <i class="fa-solid fa-phone-volume animate-bounce text-xl"></i>
+            <span>(021) 3190-5454</span>
+          </a>
+          <p class="text-[10px] text-slate-500">Hubungi langsung nomor di atas untuk penjemputan ambulans atau persiapan resusitasi IGD.</p>
+        </div>
+
+        <!-- Panduan Triase Pasien -->
+        <div class="space-y-2.5">
+          <h4 class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-heart-pulse text-rose-600"></i>
+            <span>Sistem Triase Gawat Darurat</span>
+          </h4>
+          <div class="grid grid-cols-3 gap-2 text-center text-[10px]">
+            <div class="p-2.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-900 font-bold">
+              <span class="block text-base">🔴</span>
+              <span>Prioritas 1: Kritis (Resusitasi)</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 font-bold">
+              <span class="block text-base">🟡</span>
+              <span>Prioritas 2: Mendesak (Fraktur/Nyeri Akut)</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold">
+              <span class="block text-base">🟢</span>
+              <span>Prioritas 3: Rawat Jalan</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lokasi Fisik IGD -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] space-y-1">
+          <div class="font-bold text-slate-900 flex items-center gap-1">
+            <i class="fa-solid fa-location-dot text-rose-600"></i>
+            <span>Akses Masuk IGD Fisik:</span>
+          </div>
+          <p class="text-slate-500">Gedung A Lantai 1 (Pintu Masuk Barat), Jl. Kramat Raya No. 7-9, Senen, Jakarta Pusat. Jalur bebas hambatan khusus ambulans.</p>
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+        <span class="text-[11px] text-slate-500 font-medium">Buka 24 Jam Setiap Hari</span>
+        <a href="tel:02131905454" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-phone"></i>
+          <span>Panggil Ambulans Sekarang</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 3: CETAK STRUK THERMAL KIOSK FISIK (80MM STANDAR RS)                -->
+  <!-- ========================================================================= -->
+  <div id="modal-kiosk-ticket" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-slate-900 p-4 text-white flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-receipt text-amber-400"></i>
+          <span class="font-extrabold text-xs tracking-wider">STRUK ANTREAN FISIK LOBI</span>
+        </div>
+        <button onclick="closeKioskModal()" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <!-- STRUK THERMAL (80MM STANDAR KIOSK) -->
+      <div class="p-6 bg-slate-100 flex justify-center">
+        <div id="printAreaKiosk" class="thermal-receipt w-full max-w-[290px] p-5 shadow-thermal rounded-sm text-center text-slate-900 space-y-3">
+          
+          <!-- Header Struk RS -->
+          <div class="border-b border-dashed border-slate-400 pb-3">
+            <h3 class="font-black text-sm tracking-tight leading-none">RS POLITEKNIK LP3I</h3>
+            <p class="text-[9px] text-slate-600 mt-1">Jl. Kramat Raya No. 7-9, Senen, Jakarta Pusat</p>
+            <p class="text-[9px] text-slate-500 font-mono" id="kiosk-struk-time">27/10/2026 - 08:30 WIB</p>
+          </div>
+
+          <!-- Nomor Antrean Raksasa -->
+          <div class="py-2">
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">NOMOR ANTREAN ANDA</div>
+            <div id="kiosk-struk-antrean" class="text-4xl font-mono font-black my-1 text-slate-950 tracking-wider">
+              POLI-UMUM-001
+            </div>
+            <div id="kiosk-struk-poli" class="text-[11px] font-extrabold text-slate-800">
+              POLIKLINIK UMUM
+            </div>
+            <div id="kiosk-struk-dokter" class="text-[10px] text-slate-600 mt-0.5">
+              dr. Nasril Al-Farabi, M.Kes
+            </div>
+          </div>
+
+          <!-- REAL QR CODE CONTAINER (SCAN-READY DI ADMISI) -->
+          <div class="border-t border-b border-dashed border-slate-400 py-3 flex flex-col items-center justify-center">
+            <div id="kiosk-qrcode-box" class="p-2 bg-white rounded flex items-center justify-center"></div>
+            <div id="kiosk-struk-code" class="text-[10px] font-mono font-bold mt-1 text-slate-700">
+              KIOSK-20261027-1001
+            </div>
+            <p class="text-[8px] text-slate-500 mt-0.5">Scan kode di atas pada scanner meja admisi</p>
+          </div>
+
+          <!-- Footer Struk -->
+          <div class="text-[9px] text-slate-500 leading-tight pt-1">
+            <p>Silakan menunggu di ruang tunggu poliklinik.</p>
+            <p class="font-bold text-slate-800 mt-1">TERIMA KASIH ATAS KUNJUNGAN ANDA</p>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="p-4 bg-white border-t border-slate-200 flex justify-between gap-2">
+        <button onclick="closeKioskModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
+          Selesai
+        </button>
+        <button onclick="window.print()" class="px-5 py-2 bg-medical-teal hover:bg-medical-teal-dark text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-print"></i>
+          <span>Cetak Struk Thermal</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 4: E-TIKET RESMI ONLINE (KARTU MODERN + REAL QR CODE)              -->
+  <!-- ========================================================================= -->
+  <div id="modal-tiket" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+      <div class="bg-medical-teal p-5 text-white flex justify-between items-center">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center">
+            <img src="lp3i_logo.png" alt="Logo LP3I" class="w-full h-full object-contain">
+          </div>
+          <div>
+            <span class="font-extrabold text-xs tracking-wider block">E-TIKET ANTREAN RESMI</span>
+            <span class="text-[10px] text-teal-100">RS Politeknik LP3I Jakarta</span>
+          </div>
+        </div>
+        <button onclick="closeModalTiket()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="printArea" class="p-6 space-y-4">
+        <div class="text-center pb-3 border-b border-dashed border-slate-200">
+          <h4 class="font-extrabold text-slate-900 text-base">RS POLITEKNIK LP3I JAKARTA</h4>
+          <p class="text-[10px] text-slate-400">Jl. Kramat Raya No. 7-9, Senen, Jakarta Pusat</p>
+          <div class="mt-2 inline-block bg-teal-50 text-medical-teal font-mono text-xs px-3 py-1 rounded-full font-bold border border-teal-200" id="tiket-kode-booking">
+            REG-20261027-001
+          </div>
+        </div>
+
+        <!-- Nomor Antrean Besar -->
+        <div class="text-center py-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nomor Antrean Anda</div>
+          <div id="tiket-nomor-antrean" class="text-4xl sm:text-5xl font-mono font-black text-medical-teal tracking-wider my-1 font-mono">
+            POLI-UMUM-001
+          </div>
+          <div id="tiket-nama-poli" class="text-xs font-bold text-slate-700">Poliklinik Umum & Layanan Primer</div>
+        </div>
+
+        <!-- Rincian Data Kunjungan Pasien -->
+        <div class="text-xs space-y-2 bg-white">
+          <div class="flex justify-between py-1.5 border-b border-slate-100">
+            <span class="text-slate-400 font-medium">No. Rekam Medis:</span>
+            <span id="tiket-nomor-rm" class="font-bold text-slate-800 font-mono">RM-2026-0001</span>
+          </div>
+          <div class="flex justify-between py-1.5 border-b border-slate-100">
+            <span class="text-slate-400 font-medium">Nama Pasien:</span>
+            <span id="tiket-nama-pasien" class="font-bold text-slate-800">Hamzah Fadhila</span>
+          </div>
+          <div class="flex justify-between py-1.5 border-b border-slate-100">
+            <span class="text-slate-400 font-medium">Dokter Spesialis:</span>
+            <span id="tiket-nama-dokter" class="font-bold text-slate-800">dr. Nasril Al-Farabi, M.Kes</span>
+          </div>
+          <div class="flex justify-between py-1.5 border-b border-slate-100">
+            <span class="text-slate-400 font-medium">Tanggal Kunjungan:</span>
+            <span id="tiket-tanggal" class="font-semibold text-slate-800">2026-10-27</span>
+          </div>
+          <div class="flex justify-between py-1.5 border-b border-slate-100">
+            <span class="text-slate-400 font-medium">Penjamin Biaya:</span>
+            <span id="tiket-penjamin" class="font-bold text-emerald-700">BPJS KESEHATAN</span>
+          </div>
+        </div>
+
+        <!-- REAL QR CODE CONTAINER -->
+        <div class="text-center pt-2 flex flex-col items-center">
+          <div id="online-qrcode-box" class="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl shadow-inner flex items-center justify-center"></div>
+          <p class="text-[10px] text-slate-400 mt-2">Scan kode QR ini di scanner meja admisi saat tiba di rumah sakit.</p>
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-2">
+        <button onclick="window.print()" class="px-5 py-2.5 bg-medical-teal hover:bg-medical-teal-dark text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-sm">
+          <i class="fa-solid fa-print"></i>
+          <span>Cetak E-Tiket</span>
+        </button>
+        <button onclick="closeModalTiket()" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 5: RIWAYAT REKAM MEDIS PASIEN                                       -->
+  <!-- ========================================================================= -->
+  <div id="modal-riwayat-rm" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col border border-slate-200 overflow-hidden">
+      <div class="p-4 bg-medical-teal text-white flex justify-between items-center">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-notes-medical"></i>
+          <span>Riwayat Rekam Medis Elektronik Pasien</span>
+        </h3>
+        <button onclick="document.getElementById('modal-riwayat-rm').classList.add('hidden')" class="text-white hover:text-slate-200 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="riwayat-rm-content" class="p-5 overflow-y-auto space-y-3 text-xs">
+        <p class="text-slate-500">Memuat riwayat rekam medis...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM NAVIGATION FOR MOBILE                                              -->
+  <!-- ========================================================================= -->
+  <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2.5 px-3 flex justify-around items-center z-40 shadow-lg">
+    <button onclick="switchTab('beranda')" id="mob-btn-beranda" class="flex flex-col items-center text-medical-teal font-bold text-[10px]">
+      <i class="fa-solid fa-house text-base mb-1"></i>
+      <span>Beranda</span>
+    </button>
+    <button onclick="startRegistrationFlow()" id="mob-btn-pasien" class="flex flex-col items-center text-slate-400 font-semibold text-[10px]">
+      <i class="fa-solid fa-calendar-plus text-base mb-1"></i>
+      <span>Daftar</span>
+    </button>
+    <button onclick="switchTab('kiosk')" id="mob-btn-kiosk" class="flex flex-col items-center text-slate-400 font-semibold text-[10px]">
+      <i class="fa-solid fa-print text-base mb-1"></i>
+      <span>Kiosk</span>
+    </button>
+    <button onclick="openEmergencyModal()" class="flex flex-col items-center text-rose-600 font-semibold text-[10px]">
+      <i class="fa-solid fa-truck-medical text-base mb-1"></i>
+      <span>IGD</span>
+    </button>
+    <button onclick="switchTab('display')" id="mob-btn-display" class="flex flex-col items-center text-slate-400 font-semibold text-[10px]">
+      <i class="fa-solid fa-tv text-base mb-1"></i>
+      <span>Layar TV</span>
+    </button>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT: LOGIKA PENDAFTARAN, KIOSK 1-KLIK, QR SCANNER & AUDIO SYSTEM  -->
+  <!-- ========================================================================= -->
+  <script>
+    let patientMode = 'baru';
+    let kioskSelectedPenjamin = 'UMUM';
+    let poliklinikData = [];
+    let currentCallingPatient = {
+      nomor_antrean: 'POLI-UMUM-001',
+      nama_pasien: 'Hamzah Fadhila',
+      nama_poli: 'Poliklinik Umum & Layanan Primer'
+    };
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('reg-tgl-kunjungan').value = todayStr;
+      document.getElementById('reg-tgl-kunjungan').min = todayStr;
+      document.getElementById('admisi-filter-tgl').value = todayStr;
+      
+      const liveDateEl = document.getElementById('live-today-date');
+      if (liveDateEl) liveDateEl.textContent = todayStr;
+
+      loadPoliklinik();
+
+      // Tutup dropdown jika klik di luar
+      document.addEventListener('click', (e) => {
+        const userMenu = document.getElementById('user-dropdown-menu');
+        const userBtn = document.getElementById('user-menu-btn');
+        if (userMenu && userBtn && !userBtn.contains(e.target) && !userMenu.contains(e.target)) {
+          userMenu.classList.add('hidden');
+        }
+
+        const staffMenu = document.getElementById('staff-dropdown-menu');
+        const staffBtn = document.getElementById('staff-menu-btn');
+        if (staffMenu && staffBtn && !staffBtn.contains(e.target) && !staffMenu.contains(e.target)) {
+          staffMenu.classList.add('hidden');
+        }
+      });
+    });
+
+    // Toggle Dropdown Menu
+    function toggleUserDropdown() {
+      const menu = document.getElementById('user-dropdown-menu');
+      if (menu) menu.classList.toggle('hidden');
+    }
+
+    function toggleStaffDropdown() {
+      const menu = document.getElementById('staff-dropdown-menu');
+      if (menu) menu.classList.toggle('hidden');
+    }
+
+    function scrollToSection(sectionId) {
+      switchTab('beranda');
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+    }
+
+    // Modal Syarat & Ketentuan Flow
+    let pendingSelection = null;
+
+    function startRegistrationFlow() {
+      pendingSelection = null;
+      openTermsModal();
+    }
+
+    function bookingDenganDokter(poliId, dokterId) {
+      pendingSelection = { poliId, dokterId };
+      openTermsModal();
+    }
+
+    function pilihPoliDariBeranda(poliId) {
+      pendingSelection = { poliId, dokterId: null };
+      openTermsModal();
+    }
+
+    function openTermsModal() {
+      const modal = document.getElementById('modal-terms');
+      const check = document.getElementById('terms-agree-check');
+      const btn = document.getElementById('btn-proceed-reg');
+      if (modal) {
+        check.checked = false;
+        btn.disabled = true;
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeTermsModal() {
+      document.getElementById('modal-terms').classList.add('hidden');
+    }
+
+    function toggleAgreeButton(isChecked) {
+      document.getElementById('btn-proceed-reg').disabled = !isChecked;
+    }
+
+    function proceedToRegistrationForm() {
+      closeTermsModal();
+      switchTab('pasien');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (pendingSelection) {
+        const sel = pendingSelection;
+        pendingSelection = null;
+        setTimeout(async () => {
+          const selectPoli = document.getElementById('reg-poli');
+          if (selectPoli && sel.poliId) {
+            selectPoli.value = sel.poliId;
+            await loadDokterByPoli(sel.poliId);
+            if (sel.dokterId) {
+              const selectDokter = document.getElementById('reg-dokter');
+              if (selectDokter) {
+                selectDokter.value = sel.dokterId;
+                triggerQuotaCheck();
+              }
+            }
+          }
+        }, 250);
+      }
+    }
+
+    // Modal Layanan Gawat Darurat (IGD 24 Jam)
+    function openEmergencyModal() {
+      document.getElementById('modal-emergency').classList.remove('hidden');
+    }
+
+    function closeEmergencyModal() {
+      document.getElementById('modal-emergency').classList.add('hidden');
+    }
+
+    // 1. SWITCH TAB & HALAMAN
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+      // Update Nav Buttons
+      document.querySelectorAll('.nav-link').forEach(btn => {
+        btn.classList.remove('text-medical-teal', 'bg-teal-50/80');
+        btn.classList.add('text-slate-600');
+      });
+
+      const activeNav = document.getElementById(`nav-btn-${tabName}`);
+      if (activeNav) {
+        activeNav.classList.add('text-medical-teal', 'bg-teal-50/80');
+        activeNav.classList.remove('text-slate-600');
+      }
+
+      // Update Mobile Navigation
+      document.querySelectorAll('[id^="mob-btn-"]').forEach(btn => {
+        if (!btn.id.includes('emergency')) {
+          btn.classList.remove('text-medical-teal', 'font-bold');
+          btn.classList.add('text-slate-400');
+        }
+      });
+
+      const activeTab = document.getElementById(`tab-${tabName}`);
+      const activeMobBtn = document.getElementById(`mob-btn-${tabName}`);
+
+      if (activeTab) activeTab.classList.remove('hidden');
+      if (activeMobBtn) {
+        activeMobBtn.classList.add('text-medical-teal', 'font-bold');
+        activeMobBtn.classList.remove('text-slate-400');
+      }
+
+      if (tabName === 'kiosk') renderKioskButtons();
+      if (tabName === 'admisi') loadPendaftaranAdmisi();
+      if (tabName === 'dokter') loadDokterAntreanList();
+      if (tabName === 'display') loadDisplayQueue();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 2. SOUND ENGINE PUSKESMAS & INDONESIAN SPEECH
+    function playPuskesmasBellChime() {
+      return new Promise((resolve) => {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) { resolve(); return; }
+          const ctx = new AudioContext();
+
+          const notes = [
+            { freq: 587.33, start: 0.0, duration: 0.35 },
+            { freq: 440.00, start: 0.35, duration: 0.35 },
+            { freq: 659.25, start: 0.70, duration: 0.40 },
+            { freq: 880.00, start: 1.10, duration: 0.60 }
+          ];
+
+          notes.forEach(note => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.start);
+
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime + note.start);
+            gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + note.start + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + note.start + note.duration);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(ctx.currentTime + note.start);
+            osc.stop(ctx.currentTime + note.start + note.duration + 0.05);
+          });
+
+          setTimeout(() => { resolve(); }, 1800);
+        } catch (e) {
+          console.warn('AudioContext error:', e);
+          resolve();
+        }
+      });
+    }
+
+    function formatSpeechAntrean(nomorAntrean) {
+      if (!nomorAntrean) return '';
+      const parts = nomorAntrean.split('-');
+      let poliName = 'Poliklinik';
+      if (parts[1] === 'UMUM') poliName = 'Poli Umum';
+      else if (parts[1] === 'GIGI') poliName = 'Poli Gigi';
+      else if (parts[1] === 'ANAK') poliName = 'Poli Anak';
+      else if (parts[1] === 'INT') poliName = 'Poli Penyakit Dalam';
+      else if (parts[1] === 'MATA') poliName = 'Poli Mata';
+
+      const angkaStr = parts[2] || '';
+      const digitWords = {
+        '0': 'kosong', '1': 'satu', '2': 'dua', '3': 'tiga',
+        '4': 'empat', '5': 'lima', '6': 'enam', '7': 'tujuh',
+        '8': 'delapan', '9': 'sembilan'
+      };
+
+      let spelledDigits = '';
+      for (const char of angkaStr) {
+        if (digitWords[char]) spelledDigits += digitWords[char] + ' ';
+      }
+
+      return `${poliName}... ${spelledDigits.trim()}`;
+    }
+
+    async function callQueueVoicePuskesmas() {
+      if (!currentCallingPatient) {
+        alert('Pilih pasien terlebih dahulu.');
+        return;
+      }
+
+      const numEl = document.getElementById('display-calling-number');
+      const nameEl = document.getElementById('display-calling-name');
+      const poliEl = document.getElementById('display-calling-poli');
+      if (numEl) numEl.textContent = currentCallingPatient.nomor_antrean;
+      if (nameEl) nameEl.textContent = currentCallingPatient.nama_pasien;
+      if (poliEl) poliEl.textContent = currentCallingPatient.nama_poli;
+
+      await playPuskesmasBellChime();
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+
+        const antreanSpelled = formatSpeechAntrean(currentCallingPatient.nomor_antrean);
+        const speechText = `Nomor antrean... ${antreanSpelled}... Atas nama saudara... ${currentCallingPatient.nama_pasien}... Silakan menuju ke ${currentCallingPatient.nama_poli}... Terima kasih.`;
+
+        const utterance = new SpeechSynthesisUtterance(speechText);
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.85;
+        utterance.pitch = 1.05;
+
+        const voices = window.speechSynthesis.getVoices();
+        const idVoice = voices.find(v => v.lang.startsWith('id') || v.lang.includes('Indonesian'));
+        if (idVoice) utterance.voice = idVoice;
+
+        window.speechSynthesis.speak(utterance);
+      } else {
+        alert(`Memanggil: ${currentCallingPatient.nomor_antrean} - ${currentCallingPatient.nama_pasien}`);
+      }
+    }
+
+    function testChimeAndVoice() {
+      currentCallingPatient = {
+        nomor_antrean: 'POLI-UMUM-001',
+        nama_pasien: 'Hamzah Fadhila',
+        nama_poli: 'Poliklinik Umum & Layanan Primer'
+      };
+      callQueueVoicePuskesmas();
+    }
+
+    // 3. MESIN KIOSK ANTREAN MANDIRI 1-KLIK (LOBI RS)
+    function setKioskPenjamin(penj) {
+      kioskSelectedPenjamin = penj;
+      const btnUmum = document.getElementById('kiosk-penj-umum');
+      const btnBpjs = document.getElementById('kiosk-penj-bpjs');
+      if (penj === 'UMUM') {
+        btnUmum.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-medical-teal text-white shadow-sm transition';
+        btnBpjs.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:border-emerald-500 transition';
+      } else {
+        btnBpjs.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm transition';
+        btnUmum.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:border-teal-500 transition';
+      }
+    }
+
+    function renderKioskButtons() {
+      const container = document.getElementById('kiosk-poli-container');
+      if (!container || poliklinikData.length === 0) return;
+
+      const icons = {
+        'POLI-UMUM': 'fa-stethoscope',
+        'POLI-GIGI': 'fa-tooth',
+        'POLI-ANAK': 'fa-baby',
+        'POLI-INT': 'fa-heart-pulse',
+        'POLI-MATA': 'fa-eye'
+      };
+
+      container.innerHTML = poliklinikData.map(p => `
+        <div onclick="ambilAntreanKioskDirect(${p.id}, '${p.nama_poli}')" class="group p-6 bg-white rounded-3xl border-2 border-slate-200 hover:border-medical-teal hover:shadow-card-hover transition cursor-pointer text-center space-y-3">
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-teal-50 text-medical-teal flex items-center justify-center text-2xl group-hover:scale-110 group-hover:bg-medical-teal group-hover:text-white transition duration-200">
+            <i class="fa-solid ${icons[p.kode_poli] || 'fa-hospital'}"></i>
+          </div>
+          <div>
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">${p.kode_poli} &bull; ${p.lokasi_gedung}</span>
+            <h4 class="font-extrabold text-slate-900 text-base group-hover:text-medical-teal transition mt-0.5">${p.nama_poli}</h4>
+          </div>
+          <div class="pt-2">
+            <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-50 text-medical-teal font-extrabold text-xs group-hover:bg-medical-teal group-hover:text-white transition">
+              <i class="fa-solid fa-print"></i>
+              <span>Sentuh untuk Ambil Struk</span>
+            </span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function ambilAntreanKioskDirect(poliId, namaPoli) {
+      if (!confirm(`Cetak tiket nomor antrean fisik untuk ${namaPoli}?`)) return;
+
+      try {
+        const res = await fetch('/api/antrean/kiosk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ poliId, jenisPenjamin: kioskSelectedPenjamin })
+        });
+        const json = await res.json();
+
+        if (json.success) {
+          showKioskReceiptModal(json.data);
+          currentCallingPatient = {
+            nomor_antrean: json.data.nomorAntrean,
+            nama_pasien: json.data.namaPasien,
+            nama_poli: json.data.namaPoli
+          };
+        } else {
+          alert('Gagal mengambil antrean: ' + json.message);
+        }
+      } catch (e) {
+        alert('Gagal menghubungi server mesin kiosk.');
+      }
+    }
+
+    function showKioskReceiptModal(data) {
+      document.getElementById('kiosk-struk-time').textContent = `${data.tanggalKunjungan} - ${data.waktuDiterbitkan}`;
+      document.getElementById('kiosk-struk-antrean').textContent = data.nomorAntrean;
+      document.getElementById('kiosk-struk-poli').textContent = data.namaPoli.toUpperCase();
+      document.getElementById('kiosk-struk-dokter').textContent = data.namaDokter;
+      document.getElementById('kiosk-struk-code').textContent = data.kodeBooking;
+
+      // Generate REAL QR Code using QRCode.js open source
+      const qrBox = document.getElementById('kiosk-qrcode-box');
+      qrBox.innerHTML = '';
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(qrBox, {
+          text: data.kodeBooking,
+          width: 90,
+          height: 90,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+
+      document.getElementById('modal-kiosk-ticket').classList.remove('hidden');
+    }
+
+    function closeKioskModal() {
+      document.getElementById('modal-kiosk-ticket').classList.add('hidden');
+    }
+
+    // 4. VERIFIKASI QR CODE / KODE BOOKING DI MEJA ADMISI
+    async function verifikasiQrCodeAction() {
+      const inputEl = document.getElementById('admisi-scan-input');
+      const feedbackEl = document.getElementById('admisi-scan-feedback');
+      const code = inputEl.value.trim();
+
+      if (!code) {
+        feedbackEl.className = 'p-3 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 block';
+        feedbackEl.textContent = 'Harap masukkan atau scan kode booking / QR terlebih dahulu.';
+        return;
+      }
+
+      feedbackEl.className = 'p-3 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 block';
+      feedbackEl.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-1"></i> Memverifikasi data antrean...';
+
+      try {
+        const res = await fetch('/api/pendaftaran/verifikasi-qr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+        const json = await res.json();
+
+        if (json.success) {
+          feedbackEl.className = 'p-3 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-950 border border-emerald-300 block';
+          feedbackEl.innerHTML = `
+            <i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>
+            <span>${json.message}</span> &bull; 
+            <strong>${json.data.nomor_antrean}</strong> - ${json.data.nama_pasien} (${json.data.nama_poli})
+          `;
+          inputEl.value = '';
+          loadPendaftaranAdmisi();
+        } else {
+          feedbackEl.className = 'p-3 rounded-xl text-xs font-bold bg-rose-100 text-rose-900 border border-rose-300 block';
+          feedbackEl.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-600 mr-1.5"></i> ${json.message}`;
+        }
+      } catch (e) {
+        feedbackEl.className = 'p-3 rounded-xl text-xs font-bold bg-rose-100 text-rose-900 block';
+        feedbackEl.textContent = 'Gagal memverifikasi ke server.';
+      }
+    }
+
+    // 5. PENDAFTARAN RAWAT JALAN ONLINE
+    function setPatientType(type) {
+      patientMode = type;
+      const btnBaru = document.getElementById('btn-mode-baru');
+      const btnLama = document.getElementById('btn-mode-lama');
+      const iconBaru = document.getElementById('icon-container-baru');
+      const iconLama = document.getElementById('icon-container-lama');
+      const checkBaru = document.getElementById('check-baru');
+      const checkLama = document.getElementById('check-lama');
+      const badgeBaru = document.getElementById('badge-baru');
+      const badgeLama = document.getElementById('badge-lama');
+
+      const secBaru = document.getElementById('section-pasien-baru');
+      const secLama = document.getElementById('section-pasien-lama');
+      const formTitle = document.getElementById('form-title');
+      const formSubtitle = document.getElementById('form-subtitle');
+
+      if (type === 'baru') {
+        btnBaru.className = 'group relative p-4 sm:p-5 rounded-2xl border-2 transition-all duration-200 text-left bg-white border-medical-teal shadow-sm focus:outline-none';
+        iconBaru.className = 'w-11 h-11 rounded-xl bg-medical-teal text-white flex items-center justify-center text-base shadow-sm transition group-hover:scale-105';
+        checkBaru.classList.remove('hidden');
+        badgeBaru.className = 'bg-teal-100 text-medical-teal text-[10px] font-bold px-2 py-0.5 rounded-full';
+        badgeBaru.textContent = 'Aktif';
+
+        btnLama.className = 'group relative p-4 sm:p-5 rounded-2xl border-2 transition-all duration-200 text-left bg-white border-slate-200 hover:border-slate-300 shadow-subtle focus:outline-none';
+        iconLama.className = 'w-11 h-11 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-base transition group-hover:scale-105';
+        checkLama.classList.add('hidden');
+        badgeLama.classList.add('hidden');
+
+        secBaru.classList.remove('hidden');
+        secLama.classList.add('hidden');
+        formTitle.textContent = 'Formulir Pendaftaran Pasien Baru';
+        formSubtitle.textContent = 'Lengkapi identitas diri Anda untuk penerbitan Nomor Rekam Medis';
+
+        document.getElementById('reg-nik').required = true;
+        document.getElementById('reg-nama').required = true;
+        document.getElementById('reg-tgl-lahir').required = true;
+        document.getElementById('reg-alamat').required = true;
+        document.getElementById('reg-nohp').required = true;
+      } else {
+        btnLama.className = 'group relative p-4 sm:p-5 rounded-2xl border-2 transition-all duration-200 text-left bg-white border-medical-teal shadow-sm focus:outline-none';
+        iconLama.className = 'w-11 h-11 rounded-xl bg-medical-teal text-white flex items-center justify-center text-base shadow-sm transition group-hover:scale-105';
+        checkLama.classList.remove('hidden');
+        badgeLama.classList.remove('hidden');
+        badgeLama.className = 'bg-teal-100 text-medical-teal text-[10px] font-bold px-2 py-0.5 rounded-full';
+        badgeLama.textContent = 'Aktif';
+
+        btnBaru.className = 'group relative p-4 sm:p-5 rounded-2xl border-2 transition-all duration-200 text-left bg-white border-slate-200 hover:border-slate-300 shadow-subtle focus:outline-none';
+        iconBaru.className = 'w-11 h-11 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-base transition group-hover:scale-105';
+        checkBaru.classList.add('hidden');
+        badgeBaru.classList.add('hidden');
+
+        secBaru.classList.add('hidden');
+        secLama.classList.remove('hidden');
+        formTitle.textContent = 'Pendaftaran Pasien Kontrol (Lama)';
+        formSubtitle.textContent = 'Masukkan Nomor Rekam Medis (RM) atau NIK untuk verifikasi data Anda';
+
+        document.getElementById('reg-nik').required = false;
+        document.getElementById('reg-nama').required = false;
+        document.getElementById('reg-tgl-lahir').required = false;
+        document.getElementById('reg-alamat').required = false;
+        document.getElementById('reg-nohp').required = false;
+      }
+    }
+
+    function togglePenjamin(val) {
+      const cardUmum = document.getElementById('card-penjamin-umum');
+      const cardBpjs = document.getElementById('card-penjamin-bpjs');
+      const bpjsBox = document.getElementById('bpjs-input-container');
+
+      if (val === 'BPJS') {
+        cardBpjs.className = 'flex items-center p-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/40 cursor-pointer transition';
+        cardUmum.className = 'flex items-center p-3 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 cursor-pointer transition';
+        bpjsBox.classList.remove('hidden');
+        document.getElementById('reg-nobpjs').required = true;
+      } else {
+        cardUmum.className = 'flex items-center p-3 rounded-xl border-2 border-medical-teal bg-teal-50/40 cursor-pointer transition';
+        cardBpjs.className = 'flex items-center p-3 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 cursor-pointer transition';
+        bpjsBox.classList.add('hidden');
+        document.getElementById('reg-nobpjs').required = false;
+      }
+    }
+
+    function fillDummyData() {
+      const rand = Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('reg-nik').value = `317101${rand}0001`;
+      document.getElementById('reg-nama').value = 'Hamzah Fadhila';
+      document.getElementById('reg-jk').value = 'Laki-laki';
+      document.getElementById('reg-tgl-lahir').value = '2004-08-14';
+      document.getElementById('reg-goldar').value = 'O';
+      document.getElementById('reg-nohp').value = '081299887766';
+      document.getElementById('reg-alamat').value = 'Jl. Kramat Raya No. 7-9, Senen, Jakarta Pusat';
+      document.getElementById('reg-keluhan').value = 'Pemeriksaan kesehatan rawat jalan rutin';
+    }
+
+    async function loadPoliklinik() {
+      try {
+        const res = await fetch('/api/poliklinik');
+        const json = await res.json();
+        if (json.success) {
+          poliklinikData = json.data;
+          const selectPoli = document.getElementById('reg-poli');
+          const admisiPoli = document.getElementById('admisi-filter-poli');
+          const dokterPoli = document.getElementById('dokter-portal-poli');
+
+          selectPoli.innerHTML = '<option value="">-- Pilih Poliklinik Spesialis --</option>';
+          admisiPoli.innerHTML = '<option value="">Semua Poliklinik</option>';
+          dokterPoli.innerHTML = '';
+
+          json.data.forEach(p => {
+            selectPoli.innerHTML += `<option value="${p.id}">${p.nama_poli} (${p.lokasi_gedung})</option>`;
+            admisiPoli.innerHTML += `<option value="${p.id}">${p.nama_poli}</option>`;
+            dokterPoli.innerHTML += `<option value="${p.id}">${p.nama_poli}</option>`;
+          });
+
+          renderHomePoliCards();
+          renderKioskButtons();
+          loadDoctorCardsList();
+        }
+      } catch (e) {
+        console.error('Gagal memuat poliklinik:', e);
+      }
+    }
+
+    function renderHomePoliCards() {
+      const container = document.getElementById('home-poli-grid');
+      if (!container || poliklinikData.length === 0) return;
+
+      const icons = {
+        'POLI-UMUM': 'fa-stethoscope',
+        'POLI-GIGI': 'fa-tooth',
+        'POLI-ANAK': 'fa-baby',
+        'POLI-INT': 'fa-heart-pulse',
+        'POLI-MATA': 'fa-eye'
+      };
+
+      container.innerHTML = poliklinikData.map(p => `
+        <div class="p-5 bg-white rounded-2xl border border-slate-200/80 hover:border-teal-400 hover:shadow-subtle transition space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="w-10 h-10 rounded-xl bg-teal-50 text-medical-teal flex items-center justify-center text-lg">
+              <i class="fa-solid ${icons[p.kode_poli] || 'fa-hospital'}"></i>
+            </div>
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Buka Hari Ini</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-900 text-sm">${p.nama_poli}</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">${p.lokasi_gedung}</p>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
+            <span class="text-slate-500 font-mono text-[11px]">Sesi Pagi & Siang</span>
+            <button onclick="pilihPoliDariBeranda(${p.id})" class="text-medical-teal font-extrabold hover:underline">
+              Pilih Poli &rarr;
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadDokterByPoli(poliId) {
+      const selectDokter = document.getElementById('reg-dokter');
+      if (!poliId) {
+        selectDokter.innerHTML = '<option value="">-- Pilih Poliklinik Terlebih Dahulu --</option>';
+        selectDokter.disabled = true;
+        triggerQuotaCheck();
+        return;
+      }
+
+      try {
+        selectDokter.innerHTML = '<option value="">Memuat dokter...</option>';
+        const res = await fetch(`/api/dokter?poli_id=${poliId}`);
+        const json = await res.json();
+
+        if (json.success && json.data.length > 0) {
+          selectDokter.innerHTML = '<option value="">-- Pilih Dokter Spesialis --</option>';
+          json.data.forEach(d => {
+            selectDokter.innerHTML += `<option value="${d.id}">${d.nama_dokter} - ${d.spesialisasi}</option>`;
+          });
+          selectDokter.disabled = false;
+        } else {
+          selectDokter.innerHTML = '<option value="">Tidak ada dokter bertugas</option>';
+          selectDokter.disabled = true;
+        }
+      } catch (e) {
+        selectDokter.innerHTML = '<option value="">Gagal memuat dokter</option>';
+      }
+      triggerQuotaCheck();
+    }
+
+    async function loadDoctorCardsList() {
+      const container = document.getElementById('live-doctor-cards');
+      if (!container) return;
+
+      try {
+        const res = await fetch('/api/dokter');
+        const json = await res.json();
+        if (json.success && json.data.length > 0) {
+          container.innerHTML = json.data.slice(0, 4).map(d => `
+            <div onclick="quickSelectDoctor(${d.poli_id}, ${d.id})" class="group p-3.5 rounded-xl border border-slate-200/80 hover:border-teal-500 hover:bg-teal-50/20 transition cursor-pointer space-y-2">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-lg bg-teal-50 text-medical-teal font-extrabold flex items-center justify-center text-xs">
+                    ${d.nama_dokter.substring(0, 4)}
+                  </div>
+                  <div>
+                    <div class="font-bold text-slate-800 text-xs group-hover:text-medical-teal transition">${d.nama_dokter}</div>
+                    <div class="text-[10px] text-slate-400">${d.nama_poli}</div>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  Tersedia
+                </span>
+              </div>
+              <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-teal-600 h-1.5 rounded-full" style="width: 25%"></div>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {}
+    }
+
+    async function quickSelectDoctor(poliId, dokterId) {
+      const selectPoli = document.getElementById('reg-poli');
+      selectPoli.value = poliId;
+      await loadDokterByPoli(poliId);
+      const selectDokter = document.getElementById('reg-dokter');
+      selectDokter.value = dokterId;
+      triggerQuotaCheck();
+
+      if (window.innerWidth < 1024) {
+        document.getElementById('form-pendaftaran').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    async function triggerQuotaCheck() {
+      const dokterId = document.getElementById('reg-dokter').value;
+      const tanggal = document.getElementById('reg-tgl-kunjungan').value;
+      const quotaBox = document.getElementById('quota-box-content');
+
+      if (!dokterId || !tanggal) {
+        quotaBox.className = 'p-5 rounded-2xl bg-slate-50 border border-slate-200/80 text-center transition';
+        quotaBox.innerHTML = `
+          <div class="w-12 h-12 mx-auto rounded-full bg-white border border-slate-200 text-slate-400 flex items-center justify-center text-lg mb-2 shadow-subtle">
+            <i class="fa-solid fa-stethoscope text-medical-teal"></i>
+          </div>
+          <p class="text-xs text-slate-700 font-bold">Pilih Dokter & Tanggal Kunjungan</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Sistem akan secara instan menampilkan sisa kapasitas antrean periksa.</p>
+        `;
+        return;
+      }
+
+      quotaBox.innerHTML = `
+        <div class="py-4 text-center text-xs text-slate-500">
+          <i class="fa-solid fa-spinner animate-spin text-medical-teal text-base mb-1.5 block"></i>
+          <span>Mengecek ketersediaan kuota dokter secara live...</span>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(`/api/jadwal/kuota?dokterId=${dokterId}&tanggal=${tanggal}`);
+        const json = await res.json();
+
+        if (json.success) {
+          const q = json.data;
+          if (q.available) {
+            const percent = ((q.kuotaTerisi / q.kuotaMaksimal) * 100).toFixed(0);
+            quotaBox.className = 'p-5 rounded-2xl bg-teal-50/70 border border-teal-200 text-slate-900 text-left transition space-y-3';
+            quotaBox.innerHTML = `
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs uppercase tracking-wider text-medical-teal flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-check text-emerald-600"></i> Kuota Tersedia
+                </span>
+                <span class="text-xs font-mono font-bold bg-teal-100 text-medical-teal px-2.5 py-0.5 rounded-full">
+                  ${q.sisaKuota} Slot Tersisa
+                </span>
+              </div>
+              
+              <div class="space-y-1">
+                <div class="flex justify-between text-[11px] text-slate-600 font-semibold">
+                  <span>Kapasitas Terisi</span>
+                  <span>${q.kuotaTerisi} dari ${q.kuotaMaksimal}</span>
+                </div>
+                <div class="w-full bg-teal-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-medical-teal h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                </div>
+              </div>
+
+              <div class="text-[11px] space-y-0.5 pt-1 border-t border-teal-100 text-slate-600">
+                <div>Dokter: <strong class="text-slate-900">${q.namaDokter}</strong></div>
+                <div>Jadwal: <strong class="text-slate-900">${q.hari} (${q.jamMulai} - ${q.jamSelesai} WIB)</strong></div>
+              </div>
+            `;
+          } else {
+            quotaBox.className = 'p-5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 text-left transition space-y-2';
+            quotaBox.innerHTML = `
+              <div class="flex items-center space-x-1.5 text-rose-700 font-bold text-xs">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>Slot Kuota Tidak Tersedia</span>
+              </div>
+              <p class="text-xs text-rose-800 leading-relaxed">${q.reason || q.message}</p>
+            `;
+          }
+        }
+      } catch (err) {
+        quotaBox.className = 'p-5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950';
+        quotaBox.innerHTML = '<p class="text-xs text-rose-800">Gagal terhubung ke basis data kuota.</p>';
+      }
+    }
+
+    async function cariPasienLama() {
+      const q = document.getElementById('reg-identifier-lama').value.trim();
+      const infoBox = document.getElementById('info-pasien-lama');
+
+      if (!q) {
+        alert('Masukkan Nomor Rekam Medis (RM) atau NIK terlebih dahulu.');
+        return;
+      }
+
+      infoBox.classList.remove('hidden');
+      infoBox.className = 'p-3 rounded-xl text-xs bg-white border border-slate-200 text-slate-600';
+      infoBox.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-1.5"></i> Mencari data pasien di server SIM-RS...';
+
+      try {
+        const res = await fetch(`/api/pasien/search?q=${encodeURIComponent(q)}`);
+        const json = await res.json();
+
+        if (json.success && json.data.length > 0) {
+          const p = json.data[0];
+          infoBox.className = 'p-4 rounded-xl text-xs bg-teal-50 border border-teal-200 text-slate-800 space-y-1';
+          infoBox.innerHTML = `
+            <div class="font-bold text-medical-teal flex items-center gap-1.5 text-sm">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> Pasien Terdaftar Ditemukan!
+            </div>
+            <div>No. RM: <strong class="font-mono">${p.nomor_rm}</strong> &bull; NIK: <strong class="font-mono">${p.nik}</strong></div>
+            <div>Nama: <strong>${p.nama_lengkap}</strong> (${p.jenis_kelamin})</div>
+            <div>Penjamin: <span class="bg-teal-100 text-medical-teal px-1.5 py-0.5 rounded font-bold">${p.jenis_penjamin}</span></div>
+          `;
+        } else {
+          infoBox.className = 'p-4 rounded-xl text-xs bg-rose-50 border border-rose-200 text-rose-900';
+          infoBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1.5 text-rose-600"></i> Pasien tidak ditemukan. Periksa kembali No. RM / NIK Anda, atau gunakan menu Pasien Baru.`;
+        }
+      } catch (e) {
+        infoBox.className = 'p-4 rounded-xl text-xs bg-rose-50 border border-rose-200 text-rose-900';
+        infoBox.innerHTML = 'Gagal menghubungi server pencarian.';
+      }
+    }
+
+    async function handleRegistrationSubmit(e) {
+      e.preventDefault();
+      const alertBox = document.getElementById('patient-alert');
+      alertBox.classList.add('hidden');
+
+      const penjaminVal = document.querySelector('input[name="penjamin"]:checked').value;
+      const poliId = document.getElementById('reg-poli').value;
+      const dokterId = document.getElementById('reg-dokter').value;
+      const tglKunjungan = document.getElementById('reg-tgl-kunjungan').value;
+      const sesi = document.getElementById('reg-sesi').value;
+      const keluhan = document.getElementById('reg-keluhan').value;
+
+      let payload = {};
+      let endpoint = '';
+
+      if (patientMode === 'baru') {
+        endpoint = '/api/pendaftaran/baru';
+        payload = {
+          nik: document.getElementById('reg-nik').value.trim(),
+          namaLengkap: document.getElementById('reg-nama').value.trim(),
+          jenisKelamin: document.getElementById('reg-jk').value,
+          tanggalLahir: document.getElementById('reg-tgl-lahir').value,
+          golonganDarah: document.getElementById('reg-goldar').value,
+          noHp: document.getElementById('reg-nohp').value.trim(),
+          alamat: document.getElementById('reg-alamat').value.trim(),
+          jenisPenjamin: penjaminVal,
+          nomorBpjs: penjaminVal === 'BPJS' ? document.getElementById('reg-nobpjs').value.trim() : null,
+          poliId, dokterId, tanggalKunjungan: tglKunjungan, sesi, keluhanAwal: keluhan
+        };
+      } else {
+        endpoint = '/api/pendaftaran/lama';
+        const identifier = document.getElementById('reg-identifier-lama').value.trim();
+        if (!identifier) {
+          alert('Nomor RM atau NIK wajib diisi untuk pasien kontrol.');
+          return;
+        }
+        payload = {
+          identifier, poliId, dokterId, tanggalKunjungan: tglKunjungan, sesi, keluhanAwal: keluhan
+        };
+      }
+
+      const submitBtn = document.getElementById('btn-submit-pendaftaran');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-2"></i> Memproses Pendaftaran...';
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          showTiketModal(result.data);
+          currentCallingPatient = {
+            nomor_antrean: result.data.nomorAntrean,
+            nama_pasien: result.data.namaPasien,
+            nama_poli: result.data.namaPoli
+          };
+          if (patientMode === 'baru') {
+            document.getElementById('form-pendaftaran').reset();
+            document.getElementById('reg-tgl-kunjungan').value = todayStr;
+          }
+          triggerQuotaCheck();
+        } else {
+          alertBox.className = 'p-4 rounded-xl text-xs sm:text-sm font-semibold bg-rose-100 border border-rose-300 text-rose-950';
+          alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1.5"></i> ${result.message || 'Pendaftaran gagal diproses.'}`;
+          alertBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        alertBox.className = 'p-4 rounded-xl text-xs sm:text-sm font-semibold bg-rose-100 border border-rose-300 text-rose-950';
+        alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1.5"></i> Gagal menghubungi server rumah sakit.';
+        alertBox.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-ticket-simple text-teal-200 mr-2"></i> DAFTAR & TERBITKAN E-TIKET ANTREAN';
+      }
+    }
+
+    function showTiketModal(data) {
+      document.getElementById('tiket-kode-booking').textContent = data.kodeBooking;
+      document.getElementById('tiket-nomor-antrean').textContent = data.nomorAntrean;
+      document.getElementById('tiket-nama-poli').textContent = data.namaPoli;
+      document.getElementById('tiket-nomor-rm').textContent = data.nomorRM;
+      document.getElementById('tiket-nama-pasien').textContent = data.namaPasien;
+      document.getElementById('tiket-nama-dokter').textContent = data.namaDokter;
+      document.getElementById('tiket-tanggal').textContent = data.tanggalKunjungan;
+      document.getElementById('tiket-penjamin').textContent = data.jenisPenjamin === 'BPJS' ? 'BPJS KESEHATAN (AKTIF)' : 'PASIEN UMUM (MANDIRI)';
+
+      // Render REAL Scannable QR Code for online ticket
+      const onlineQrBox = document.getElementById('online-qrcode-box');
+      onlineQrBox.innerHTML = '';
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(onlineQrBox, {
+          text: data.kodeBooking,
+          width: 110,
+          height: 110,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+
+      document.getElementById('modal-tiket').classList.remove('hidden');
+    }
+
+    function closeModalTiket() {
+      document.getElementById('modal-tiket').classList.add('hidden');
+    }
+
+    // 6. ADMISI: LOAD & ACTIONS
+    async function loadPendaftaranAdmisi() {
+      const tbody = document.getElementById('admisi-table-body');
+      const tgl = document.getElementById('admisi-filter-tgl').value;
+      const poliId = document.getElementById('admisi-filter-poli').value;
+      const status = document.getElementById('admisi-filter-status').value;
+
+      let url = `/api/pendaftaran?`;
+      if (tgl) url += `tanggal=${tgl}&`;
+      if (poliId) url += `poli_id=${poliId}&`;
+      if (status) url += `status=${status}&`;
+
+      tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Memuat data pendaftaran...</td></tr>';
+
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+        if (json.success) {
+          document.getElementById('admisi-total-count').textContent = json.count;
+
+          if (json.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada antrean yang cocok dengan filter saat ini.</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = json.data.map(item => {
+            let statusBadge = '';
+            if (item.status_pendaftaran === 'MENUNGGU') {
+              statusBadge = '<span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full text-[10px] font-bold">MENUNGGU</span>';
+            } else if (item.status_pendaftaran === 'TERKONFIRMASI') {
+              statusBadge = '<span class="bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full text-[10px] font-bold">CHECK-IN</span>';
+            } else if (item.status_pendaftaran === 'SELESAI') {
+              statusBadge = '<span class="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full text-[10px] font-bold">SELESAI</span>';
+            } else {
+              statusBadge = '<span class="bg-rose-100 text-rose-900 px-2 py-0.5 rounded-full text-[10px] font-bold">BATAL</span>';
+            }
+
+            return `
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                <td class="p-3.5 font-bold text-slate-900 font-mono text-sm">${item.nomor_antrean}</td>
+                <td class="p-3.5 font-mono text-[11px] text-slate-400">${item.kode_booking}</td>
+                <td class="p-3.5">
+                  <div class="font-bold text-slate-900">${item.nama_pasien}</div>
+                  <div class="text-[10px] text-slate-400 font-mono">${item.nomor_rm} &bull; ${item.nik}</div>
+                </td>
+                <td class="p-3.5">
+                  <div class="font-semibold text-slate-800">${item.nama_poli}</div>
+                  <div class="text-[10px] text-slate-400">${item.nama_dokter}</div>
+                </td>
+                <td class="p-3.5 font-bold ${item.jenis_penjamin === 'BPJS' ? 'text-emerald-700' : 'text-slate-600'}">${item.jenis_penjamin}</td>
+                <td class="p-3.5">${statusBadge}</td>
+                <td class="p-3.5 text-center">
+                  ${item.status_pendaftaran === 'MENUNGGU' ? `
+                    <button onclick="updateStatus(${item.pendaftaran_id}, 'TERKONFIRMASI')" class="px-3 py-1 bg-medical-teal hover:bg-medical-teal-dark text-white rounded-lg text-[11px] font-bold transition shadow-sm mr-1">
+                      Check-in
+                    </button>
+                    <button onclick="updateStatus(${item.pendaftaran_id}, 'BATAL')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-[11px] font-medium transition">
+                      Batal
+                    </button>
+                  ` : `
+                    <span class="text-[11px] text-slate-400">Terkonfirmasi</span>
+                  `}
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-rose-500">Gagal mengambil data dari server.</td></tr>';
+      }
+    }
+
+    async function updateStatus(pendaftaranId, newStatus) {
+      if (!confirm(`Konfirmasi perubahan status antrean menjadi ${newStatus}?`)) return;
+      try {
+        const res = await fetch(`/api/pendaftaran/${pendaftaranId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        const json = await res.json();
+        if (json.success) loadPendaftaranAdmisi();
+      } catch (e) {
+        alert('Gagal mengupdate status.');
+      }
+    }
+
+    // 7. RUANG DOKTER & REKAM MEDIS
+    async function loadDokterAntreanList() {
+      const poliId = document.getElementById('dokter-portal-poli').value;
+      const queueContainer = document.getElementById('dokter-patient-queue');
+      const badge = document.getElementById('dokter-antrean-badge');
+
+      if (!poliId) return;
+
+      queueContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Memuat antrean hadir...</p>';
+
+      try {
+        const res = await fetch(`/api/pendaftaran?tanggal=${todayStr}&poli_id=${poliId}&status=TERKONFIRMASI`);
+        const json = await res.json();
+
+        if (json.success) {
+          badge.textContent = `${json.count} Pasien Hadir`;
+          if (json.count === 0) {
+            queueContainer.innerHTML = `
+              <div class="text-center py-8 text-slate-400">
+                <i class="fa-solid fa-bed text-3xl mb-2 text-slate-300"></i>
+                <p class="text-xs">Belum ada pasien yang check-in untuk poli ini.</p>
+              </div>
+            `;
+            return;
+          }
+
+          queueContainer.innerHTML = json.data.map(item => `
+            <div onclick="selectPatientForDoctor(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="p-3.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/20 cursor-pointer transition space-y-1">
+              <div class="flex justify-between items-center">
+                <span class="font-mono font-bold text-slate-900 text-sm">${item.nomor_antrean}</span>
+                <span class="text-[10px] bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded-full">${item.jenis_penjamin}</span>
+              </div>
+              <div class="font-bold text-slate-800 text-xs">${item.nama_pasien}</div>
+              <div class="text-[10px] text-slate-400">No RM: ${item.nomor_rm}</div>
+              <div class="text-[10px] text-teal-800 italic truncate">"${item.keluhan_awal || 'Pemeriksaan rutin'}"</div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        queueContainer.innerHTML = '<p class="text-xs text-rose-500 text-center py-4">Gagal memuat antrean.</p>';
+      }
+    }
+
+    function selectPatientForDoctor(patient) {
+      currentCallingPatient = patient;
+      document.getElementById('current-patient-info').innerHTML = `
+        <strong>${patient.nama_pasien}</strong> &bull; No RM: <span class="font-mono font-bold">${patient.nomor_rm}</span> &bull; Antrean: <span class="text-medical-teal font-black">${patient.nomor_antrean}</span>
+      `;
+
+      const callBtn = document.getElementById('btn-call-voice');
+      callBtn.classList.remove('hidden');
+      callBtn.classList.add('inline-flex');
+      document.getElementById('btn-submit-rm').disabled = false;
+
+      document.getElementById('rm-pendaftaran-id').value = patient.pendaftaran_id;
+      document.getElementById('rm-nomor-rm').value = patient.nomor_rm;
+      document.getElementById('rm-keluhan').value = patient.keluhan_awal || '';
+    }
+
+    async function handleRekamMedisSubmit(e) {
+      e.preventDefault();
+      const alertBox = document.getElementById('rm-alert');
+      alertBox.classList.add('hidden');
+
+      const payload = {
+        pendaftaranId: document.getElementById('rm-pendaftaran-id').value,
+        tekananDarah: document.getElementById('rm-td').value,
+        suhuTubuh: parseFloat(document.getElementById('rm-suhu').value) || 36.5,
+        beratBadan: parseFloat(document.getElementById('rm-bb').value) || 0,
+        tinggiBadan: parseFloat(document.getElementById('rm-tb').value) || 0,
+        keluhanUtama: document.getElementById('rm-keluhan').value,
+        diagnosaIcd10: document.getElementById('rm-diagnosa').value,
+        rencanaTerapi: document.getElementById('rm-terapi').value,
+        catatanDokter: 'Pemeriksaan poliklinik selesai'
+      };
+
+      try {
+        const res = await fetch('/api/rekam-medis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.success) {
+          alertBox.className = 'p-3 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-950 border border-emerald-300';
+          alertBox.innerHTML = '<i class="fa-solid fa-circle-check mr-1.5"></i> Rekam medis berhasil disimpan! Pasien telah selesai dilayani.';
+          alertBox.classList.remove('hidden');
+
+          document.getElementById('form-rekam-medis').reset();
+          document.getElementById('current-patient-info').textContent = 'Pemeriksaan selesai. Pilih pasien berikutnya.';
+          document.getElementById('btn-call-voice').classList.add('hidden');
+          document.getElementById('btn-submit-rm').disabled = true;
+
+          loadDokterAntreanList();
+        } else {
+          alertBox.className = 'p-3 rounded-xl text-xs font-bold bg-rose-100 text-rose-950';
+          alertBox.innerHTML = json.message;
+          alertBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        alertBox.className = 'p-3 rounded-xl text-xs font-bold bg-rose-100 text-rose-950';
+        alertBox.innerHTML = 'Gagal menyimpan hasil rekam medis.';
+        alertBox.classList.remove('hidden');
+      }
+    }
+
+    async function lihatRiwayatRM() {
+      const nomorRM = document.getElementById('rm-nomor-rm').value;
+      if (!nomorRM) {
+        alert('Pilih pasien terlebih dahulu.');
+        return;
+      }
+
+      const modal = document.getElementById('modal-riwayat-rm');
+      const content = document.getElementById('riwayat-rm-content');
+      modal.classList.remove('hidden');
+      content.innerHTML = '<p class="text-slate-400">Memuat rekam jejak...</p>';
+
+      try {
+        const res = await fetch(`/api/rekam-medis/${encodeURIComponent(nomorRM)}`);
+        const json = await res.json();
+
+        if (json.success && json.data.length > 0) {
+          content.innerHTML = json.data.map(item => `
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
+              <div class="flex justify-between items-center text-xs border-b border-slate-200 pb-1">
+                <span class="font-bold text-slate-800">${item.nama_poli} &bull; ${item.nama_dokter}</span>
+                <span class="text-slate-400 font-mono text-[10px]">${item.tanggal_pemeriksaan}</span>
+              </div>
+              <div class="text-[11px] text-slate-600"><strong>Tanda Vital:</strong> TD: ${item.tekanan_darah} | Suhu: ${item.suhu_tubuh}°C | BB: ${item.berat_badan}kg</div>
+              <div class="text-[11px] text-slate-600"><strong>Diagnosa:</strong> <span class="bg-teal-50 text-medical-teal px-1 rounded font-bold">${item.diagnosa_icd10}</span></div>
+              <div class="text-[11px] text-slate-600"><strong>Terapi:</strong> ${item.rencana_terapi}</div>
+            </div>
+          `).join('');
+        } else {
+          content.innerHTML = '<p class="text-center text-slate-400 py-6">Pasien belum memiliki riwayat rekam medis terdahulu.</p>';
+        }
+      } catch (e) {
+        content.innerHTML = '<p class="text-rose-500">Gagal mengambil data.</p>';
+      }
+    }
+
+    // 8. DISPLAY TV ANTREAN
+    async function loadDisplayQueue() {
+      const nextContainer = document.getElementById('display-next-queue');
+      try {
+        const res = await fetch(`/api/pendaftaran?tanggal=${todayStr}&status=TERKONFIRMASI`);
+        const json = await res.json();
+        if (json.success && json.data.length > 0) {
+          nextContainer.innerHTML = json.data.slice(0, 5).map(item => `
+            <div class="flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="flex items-center space-x-3">
+                <span class="font-mono font-bold text-medical-teal text-base">${item.nomor_antrean}</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">${item.nama_pasien}</div>
+                  <div class="text-[10px] text-slate-400">${item.nama_poli}</div>
+                </div>
+              </div>
+              <span class="text-[10px] bg-teal-50 text-medical-teal font-bold px-2 py-0.5 rounded-full border border-teal-200">Siap</span>
+            </div>
+          `).join('');
+        } else {
+          nextContainer.innerHTML = '<p class="text-xs text-slate-400 py-6 text-center">Tidak ada antrean tunggu berikutnya.</p>';
+        }
+      } catch (e) {
+        nextContainer.innerHTML = '<p class="text-xs text-rose-500 py-4 text-center">Gagal memuat antrean display.</p>';
+      }
+    }
+  </script>
+</body>
+</html>

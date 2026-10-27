@@ -1,0 +1,27 @@
+{
+  "name": "sistem_rumahsakit_politeknik_lp3ijkt",
+  "version": "1.0.0",
+  "description": "Aplikasi Pintar Pendaftaran Pasien (Smart Patient Registration) Rumah Sakit Politeknik LP3I Jakarta",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test test/registration.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "keywords": [
+    "lp3i",
+    "sistem-informasi-manajemen",
+    "smart-patient-registration",
+    "hospital-management"
+  ],
+  "author": "Lead Software Engineer - Politeknik LP3I Jakarta",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "docx": "^9.14.0",
+    "express": "^4.21.2"
+  }
+}
